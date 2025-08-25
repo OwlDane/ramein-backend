@@ -1,0 +1,332 @@
+import { Response } from 'express';
+import AppDataSource from '../config/database';
+import { Participant } from '../entities/Participant';
+import { Event } from '../entities/Event';
+import { AuthRequest } from '../middlewares/auth';
+import { sendEventRegistrationEmail } from '../services/emailService';
+import { MoreThan } from 'typeorm';
+import ExportService from '../services/exportService';
+
+const participantRepository = AppDataSource.getRepository(Participant);
+const eventRepository = AppDataSource.getRepository(Event);
+
+export class ParticipantController {
+    // Register for an event
+    static async register(req: AuthRequest, res: Response) {
+        try {
+            const { eventId } = req.body;
+            const userId = req.user.id;
+
+            // Check if event exists and is published
+            const event = await eventRepository.findOne({
+                where: { id: eventId, isPublished: true }
+            });
+
+            if (!event) {
+                return res.status(404).json({ message: 'Event tidak ditemukan' });
+            }
+
+            // Check if event registration is still open
+            const now = new Date();
+            const eventDateTime = new Date(event.date);
+            eventDateTime.setHours(parseInt(event.time.split(':')[0]));
+            eventDateTime.setMinutes(parseInt(event.time.split(':')[1]));
+
+            if (now >= eventDateTime) {
+                return res.status(400).json({ message: 'Pendaftaran event sudah ditutup' });
+            }
+
+            // Check if user already registered
+            const existingRegistration = await participantRepository.findOne({
+                where: { userId, eventId }
+            });
+
+            if (existingRegistration) {
+                return res.status(400).json({ message: 'Anda sudah terdaftar di event ini' });
+            }
+
+            // Generate 10-digit token number
+            const tokenNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
+
+            // Create new participant
+            const participant = new Participant();
+            participant.userId = userId;
+            participant.eventId = eventId;
+            participant.tokenNumber = tokenNumber;
+
+            await participantRepository.save(participant);
+
+            // Send registration email with token
+            await sendEventRegistrationEmail(req.user.email, event.title, tokenNumber);
+
+            return res.status(201).json({
+                message: 'Berhasil mendaftar event. Silakan cek email Anda untuk token kehadiran.',
+                participant
+            });
+        } catch (error) {
+            console.error('Event registration error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mendaftar event' });
+        }
+    }
+
+    // Mark attendance using token
+    static async markAttendance(req: AuthRequest, res: Response) {
+        try {
+            const { eventId, token } = req.body;
+            const userId = req.user.id;
+
+            // Find participant registration
+            const participant = await participantRepository.findOne({
+                where: { 
+                    eventId,
+                    userId,
+                    tokenNumber: token
+                },
+                relations: ['event']
+            });
+
+            if (!participant) {
+                return res.status(404).json({ message: 'Data pendaftaran tidak ditemukan atau token tidak valid' });
+            }
+
+            if (participant.hasAttended) {
+                return res.status(400).json({ message: 'Anda sudah mengisi daftar hadir' });
+            }
+
+            // Check if attendance is allowed (only after event starts)
+            const now = new Date();
+            const eventDateTime = new Date(participant.event.date);
+            eventDateTime.setHours(parseInt(participant.event.time.split(':')[0]));
+            eventDateTime.setMinutes(parseInt(participant.event.time.split(':')[1]));
+
+            if (now < eventDateTime) {
+                return res.status(400).json({ message: 'Daftar hadir belum dibuka' });
+            }
+
+            // Mark attendance
+            participant.hasAttended = true;
+            participant.attendedAt = new Date();
+            await participantRepository.save(participant);
+
+            return res.json({ 
+                message: 'Daftar hadir berhasil diisi',
+                participant
+            });
+        } catch (error) {
+            console.error('Mark attendance error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengisi daftar hadir' });
+        }
+    }
+
+    // Get user's registered events
+    static async getUserEvents(req: AuthRequest, res: Response) {
+        try {
+            const participants = await participantRepository.find({
+                where: { userId: req.user.id },
+                relations: ['event'],
+                order: { createdAt: 'DESC' }
+            });
+
+            return res.json(participants);
+        } catch (error) {
+            console.error('Get user events error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data event' });
+        }
+    }
+
+    // Get user's certificates
+    static async getUserCertificates(req: AuthRequest, res: Response) {
+        try {
+            const certificates = await participantRepository.find({
+                where: { 
+                    userId: req.user.id,
+                    hasAttended: true,
+                    certificateUrl: MoreThan("") // Only get entries with certificates
+                },
+                relations: ['event'],
+                order: { attendedAt: 'DESC' }
+            });
+
+            return res.json(certificates);
+        } catch (error) {
+            console.error('Get certificates error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data sertifikat' });
+        }
+    }
+
+    // Admin: Get participants for an event
+    static async getEventParticipants(req: AuthRequest, res: Response) {
+        try {
+            const { eventId } = req.params;
+
+            // Check if user is admin
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+
+            const participants = await participantRepository.find({
+                where: { eventId },
+                relations: ['user', 'event'],
+                order: { createdAt: 'DESC' }
+            });
+
+            return res.json(participants);
+        } catch (error) {
+            console.error('Get event participants error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data peserta' });
+        }
+    }
+
+    // Admin: Upload certificate for a participant
+    static async uploadCertificate(req: AuthRequest, res: Response) {
+        try {
+            const { participantId } = req.params;
+            const { certificateUrl } = req.body;
+
+            // Check if user is admin
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+
+            const participant = await participantRepository.findOne({
+                where: { 
+                    id: participantId,
+                    hasAttended: true // Only attended participants can get certificates
+                }
+            });
+
+            if (!participant) {
+                return res.status(404).json({ message: 'Data peserta tidak ditemukan atau peserta belum hadir' });
+            }
+
+            participant.certificateUrl = certificateUrl;
+            await participantRepository.save(participant);
+
+            return res.json({
+                message: 'Sertifikat berhasil diunggah',
+                participant
+            });
+        } catch (error) {
+            console.error('Upload certificate error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengunggah sertifikat' });
+        }
+    }
+
+    // Admin: Get monthly participant statistics
+    static async getMonthlyStatistics(req: AuthRequest, res: Response) {
+        try {
+            // Check if user is admin
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+
+            const currentYear = new Date().getFullYear();
+
+            // Get monthly participant counts
+            const monthlyStats = await participantRepository
+                .createQueryBuilder('participant')
+                .select('EXTRACT(MONTH FROM participant.createdAt)', 'month')
+                .addSelect('COUNT(*)', 'registrations')
+                .addSelect('COUNT(CASE WHEN participant.hasAttended = true THEN 1 END)', 'attendance')
+                .where('EXTRACT(YEAR FROM participant.createdAt) = :year', { year: currentYear })
+                .groupBy('month')
+                .orderBy('month', 'ASC')
+                .getRawMany();
+
+            return res.json(monthlyStats);
+        } catch (error) {
+            console.error('Get monthly statistics error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil statistik' });
+        }
+    }
+
+    // Admin: Export participants data
+    static async exportParticipants(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>>> {
+        try {
+            const { eventId } = req.params;
+            const { format = 'xlsx' } = req.query;
+            
+            // Check if user is admin
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+            
+            // Get participants with user and event data
+            const participants = await participantRepository.find({
+                where: { eventId },
+                relations: ['user', 'event'],
+                order: { createdAt: 'DESC' }
+            });
+            
+            const event = await eventRepository.findOne({
+                where: { id: eventId }
+            });
+            
+            if (!event) {
+                return res.status(404).json({ message: 'Event tidak ditemukan' });
+            }
+            
+            let buffer: Buffer;
+            let filename: string;
+            let contentType: string;
+            
+            if (format === 'csv') {
+                buffer = await ExportService.exportParticipantsToCSV(participants, event);
+                filename = `participants_${eventId}.csv`;
+                contentType = 'text/csv';
+            } else {
+                buffer = await ExportService.exportParticipantsToExcel(participants, event);
+                filename = `participants_${eventId}.xlsx`;
+                contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            }
+            
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+            res.send(buffer);
+            
+            // Add explicit return after res.send()
+            return res;
+            
+        } catch (error) {
+            console.error('Export participants error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengexport data peserta' });
+        }
+    }
+
+    // Admin: Export monthly statistics
+    static async exportMonthlyStatistics(req: AuthRequest, res: Response): Promise<Response<any, Record<string, any>>> {
+        try {
+            // Check if user is admin
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+            
+            const currentYear = new Date().getFullYear();
+            
+            // Get monthly statistics
+            const statistics = await participantRepository
+                .createQueryBuilder('participant')
+                .select('EXTRACT(MONTH FROM participant.createdAt)', 'month')
+                .addSelect('COUNT(*)', 'registrations')
+                .addSelect('COUNT(CASE WHEN participant.hasAttended = true THEN 1 END)', 'attendance')
+                .where('EXTRACT(YEAR FROM participant.createdAt) = :year', { year: currentYear })
+                .groupBy('month')
+                .orderBy('month', 'ASC')
+                .getRawMany();
+            
+            const buffer = await ExportService.exportMonthlyStatisticsToExcel(statistics);
+            const filename = `monthly_statistics_${currentYear}.xlsx`;
+            
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+            res.send(buffer);
+            
+            // Add explicit return after res.send()
+            return res;
+            
+        } catch (error) {
+            console.error('Export statistics error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengexport statistik' });
+        }
+    }
+}

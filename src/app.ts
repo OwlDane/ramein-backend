@@ -1,0 +1,71 @@
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Import routes
+import eventCategoryRoutes from './routes/eventCategoryRoutes';
+import authRoutes from './routes/authRoutes';
+import eventRoutes from './routes/events';
+import participantRoutes from './routes/participants';
+import adminRoutes from './routes/adminRoutes';
+import fileRoutes from './routes/fileRoutes';
+
+
+// Import middleware
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
+import sessionTimeout from './middlewares/sessionTimeout';
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+
+// Security middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Logging middleware
+app.use(morgan('dev'));
+
+// Session timeout middleware (apply to all routes)
+app.use(sessionTimeout);
+
+// Static file serving for uploads
+app.use('/api/files', express.static(path.join(__dirname, '../uploads')));
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/categories', eventCategoryRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/participants', participantRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/files', fileRoutes);
+
+
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
+export default app;
