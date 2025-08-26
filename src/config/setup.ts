@@ -43,7 +43,7 @@ async function setupDatabase() {
 
         // Run kategori_kegiatan migrations
         await AppDataSource.query(`
-      CREATE TABLE IF NOT EXISTS kategori_kegiatan (
+    CREATE TABLE IF NOT EXISTS kategori_kegiatan (
         id SERIAL PRIMARY KEY,
         nama_kategori VARCHAR(255) NOT NULL,
         slug VARCHAR(255) NOT NULL UNIQUE,

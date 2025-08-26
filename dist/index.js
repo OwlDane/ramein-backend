@@ -74,7 +74,7 @@ async function startServer() {
         await database_1.default.initialize();
         console.log("✅ Database connection has been established!");
         const server = app_1.default.listen(PORT, () => {
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
+            console.log(`🚀 Ramein Server is running on http://localhost:${PORT}`);
             console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
             console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
         });

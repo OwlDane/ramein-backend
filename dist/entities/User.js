@@ -49,23 +49,23 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "education", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: false }),
+    (0, typeorm_1.Column)({ name: "isVerified", default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isVerified", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    (0, typeorm_1.Column)({ name: "verificationToken", type: 'varchar', nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "verificationToken", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    (0, typeorm_1.Column)({ name: "tokenExpiry", type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], User.prototype, "tokenExpiry", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', nullable: true }),
+    (0, typeorm_1.Column)({ name: "resetToken", type: 'varchar', nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "resetToken", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    (0, typeorm_1.Column)({ name: "resetTokenExpiry", type: 'timestamp', nullable: true }),
     __metadata("design:type", Date)
 ], User.prototype, "resetTokenExpiry", void 0);
 __decorate([
@@ -77,23 +77,11 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: true }),
-    __metadata("design:type", Boolean)
-], User.prototype, "isActive", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Date)
-], User.prototype, "lastLoginAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: "text", nullable: true }),
-    __metadata("design:type", String)
-], User.prototype, "preferences", void 0);
-__decorate([
-    (0, typeorm_1.CreateDateColumn)(),
+    (0, typeorm_1.CreateDateColumn)({ name: "createdAt" }),
     __metadata("design:type", Date)
 ], User.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)(),
+    (0, typeorm_1.UpdateDateColumn)({ name: "updatedAt" }),
     __metadata("design:type", Date)
 ], User.prototype, "updatedAt", void 0);
 __decorate([
@@ -101,6 +89,6 @@ __decorate([
     __metadata("design:type", Array)
 ], User.prototype, "participants", void 0);
 exports.User = User = __decorate([
-    (0, typeorm_1.Entity)()
+    (0, typeorm_1.Entity)("user")
 ], User);
 //# sourceMappingURL=User.js.map

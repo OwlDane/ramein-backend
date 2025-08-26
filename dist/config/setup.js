@@ -36,7 +36,7 @@ async function setupDatabase() {
             console.log("Admin user updated and verified");
         }
         await database_1.default.query(`
-      CREATE TABLE IF NOT EXISTS kategori_kegiatan (
+    CREATE TABLE IF NOT EXISTS kategori_kegiatan (
         id SERIAL PRIMARY KEY,
         nama_kategori VARCHAR(255) NOT NULL,
         slug VARCHAR(255) NOT NULL UNIQUE,

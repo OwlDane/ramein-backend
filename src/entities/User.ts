@@ -1,13 +1,12 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
 import { Participant } from "./Participant";
 
-
 export enum UserRole {
     USER = "USER",
     ADMIN = "ADMIN"
 }
 
-@Entity()
+@Entity("user")
 export class User {
     @PrimaryGeneratedColumn("uuid")
     id: string;
@@ -30,19 +29,19 @@ export class User {
     @Column()
     education: string;
 
-    @Column({ default: false })
+    @Column({ name: "isVerified", default: false })
     isVerified: boolean;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ name: "verificationToken", type: 'varchar', nullable: true })
     verificationToken: string | null;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ name: "tokenExpiry", type: 'timestamp', nullable: true })
     tokenExpiry: Date | null;
 
-    @Column({ type: 'varchar', nullable: true })
+    @Column({ name: "resetToken", type: 'varchar', nullable: true })
     resetToken: string | null;
 
-    @Column({ type: 'timestamp', nullable: true })
+    @Column({ name: "resetTokenExpiry", type: 'timestamp', nullable: true })
     resetTokenExpiry: Date | null;
 
     @Column({
@@ -52,23 +51,12 @@ export class User {
     })
     role: UserRole;
 
-    @Column({ default: true })
-    isActive: boolean;
-
-    @Column({ nullable: true })
-    lastLoginAt: Date;
-
-    @Column({ type: "text", nullable: true })
-    preferences: string; // JSON string for user preferences
-
-    @CreateDateColumn()
+    @CreateDateColumn({ name: "createdAt" })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ name: "updatedAt" })
     updatedAt: Date;
 
     @OneToMany(() => Participant, participant => participant.user)
     participants: Participant[];
-
-
 }

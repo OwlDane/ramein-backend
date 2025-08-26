@@ -1,59 +1,51 @@
-import { DataSource } from "typeorm";
+import { DataSource, DataSourceOptions } from "typeorm";
 import { User } from "../entities/User";
 import { Event } from "../entities/Event";
 import { Participant } from "../entities/Participant";
 import { KategoriKegiatan } from "../entities/KategoriKegiatan";
-
 import { EventPackage } from "../entities/EventPackage";
 import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Parse DATABASE_URL if available, otherwise use individual config
-let databaseConfig: any;
-
-if (process.env.DATABASE_URL) {
-    // Parse DATABASE_URL format: postgresql://username:password@host:port/database
-    const url = new URL(process.env.DATABASE_URL);
-    databaseConfig = {
-        type: "postgres",
-        host: url.hostname,
-        port: parseInt(url.port) || 5432,
-        username: url.username,
-        password: url.password,
-        database: url.pathname.substring(1), // Remove leading slash
-        ssl: {
-            rejectUnauthorized: false
-        }
-    };
-} else {
-    // Fallback to individual environment variables
-    databaseConfig = {
-        type: "postgres",
-        host: process.env.DB_HOST || "localhost",
-        port: parseInt(process.env.DB_PORT || "5432"),
-        username: process.env.DB_USERNAME || "postgres",
-        password: process.env.DB_PASSWORD || "password",
-        database: process.env.DB_DATABASE || "kapanggih",
-        ssl: process.env.NODE_ENV === 'production' ? {
-            rejectUnauthorized: false
-        } : false
-    };
-}
-
-const AppDataSource = new DataSource({
-    ...databaseConfig,
+// Database configuration using Supabase connection pooler (working configuration)
+const databaseConfig: DataSourceOptions = {
+    type: "postgres",
+    host: "aws-1-ap-southeast-1.pooler.supabase.com",
+    port: 6543,
+    username: "postgres.rofxhgqffyrhencqffal",
+    password: "HisbBf4tBEnbTInu",
+    database: "postgres",
+    ssl: {
+        rejectUnauthorized: false
+    },
     entities: [User, Event, Participant, KategoriKegiatan, EventPackage],
-    synchronize: process.env.NODE_ENV !== 'production', // Only sync in development
-    logging: process.env.NODE_ENV === 'development',
-    migrations: [],
+    synchronize: false, // Disable synchronize to prevent conflicts with existing tables
+    logging: ["error", "warn"],
+    migrations: ["src/config/migrations/*.ts"],
     subscribers: [],
-    // Connection pool settings
     extra: {
-        connectionLimit: 10,
-        acquireTimeout: 60000,
-        timeout: 60000,
+        // Connection pooler settings
+        max: 10,
+        min: 2,
+        acquireTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
+        destroyTimeoutMillis: 5000,
+        idleTimeoutMillis: 30000,
+        reapIntervalMillis: 1000,
+        createRetryIntervalMillis: 200,
+        
+        // Query timeout
+        statement_timeout: 30000,
+        query_timeout: 30000,
+        
+        // Connection settings
+        connectionTimeoutMillis: 30000,
+        keepAlive: true,
+        keepAliveInitialDelayMillis: 10000
     }
-});
+};
+
+const AppDataSource = new DataSource(databaseConfig);
 
 export default AppDataSource;

@@ -1,76 +1,57 @@
-# 🎯 Kapanggih - Backend API
+# 🎯 Ramein - Event Management System Backend
 
-Backend API untuk Sistem Informasi Manajemen Kegiatan (Event) Kapanggih yang dapat mengakomodir pembuatan kegiatan oleh admin, pendaftaran publik, dan rekap data kegiatan.
+Backend API untuk sistem manajemen kegiatan/event **Ramein** yang dibangun dengan Node.js, Express, TypeScript, dan TypeORM.
 
 ## ✨ Fitur Utama
 
-### 🔐 Authentication & Authorization
-- ✅ Register user dengan validasi email
-- ✅ Login dengan JWT
-- ✅ Verifikasi email dengan OTP (5 menit expired)
-- ✅ Reset password
-- ✅ Role-based access control (Admin/User)
-- ✅ Session timeout otomatis (5 menit)
+- 🔐 **Authentication & Authorization** - JWT-based auth dengan role-based access control
+- 👥 **User Management** - Manajemen user (Admin & Regular User)
+- 📅 **Event Management** - CRUD operasi untuk kegiatan/event
+- 🎫 **Participant Registration** - Pendaftaran peserta kegiatan
+- 📊 **Admin Dashboard** - Statistik dan laporan kegiatan
+- 📁 **File Management** - Upload dan download flyer/sertifikat
+- 📧 **Email Service** - Verifikasi email dan notifikasi
+- 📈 **Data Export** - Export data ke Excel/CSV
+- 🔒 **Security Features** - Password encryption, session timeout, validation
 
-### 📅 Event Management
-- ✅ CRUD event (Admin only)
-- ✅ Validasi H-3 untuk pembuatan event
-- ✅ Publish/unpublish event
-- ✅ Search dan sorting event
-- ✅ Upload flyer dan sertifikat
+## 🛠️ Tech Stack
 
-### 👥 Participant Management
-- ✅ Pendaftaran event dengan token 10 digit
-- ✅ Daftar hadir dengan token verification
-- ✅ Riwayat event user
-- ✅ Sertifikat management
-- ✅ Export data ke Excel/CSV
-
-### 📊 Admin Dashboard
-- ✅ Statistik event per bulan (Januari - Desember)
-- ✅ Statistik peserta per bulan
-- ✅ Top 10 event dengan peserta terbanyak
-- ✅ Export dashboard data
-- ✅ User management
-
-### 📧 Email Service
-- ✅ Verifikasi email
-- ✅ Reset password
-- ✅ Konfirmasi pendaftaran event dengan token
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Language**: TypeScript
+- **ORM**: TypeORM
+- **Database**: PostgreSQL (Supabase)
+- **Authentication**: JWT
+- **File Upload**: Multer
+- **Email**: Nodemailer
+- **Data Export**: ExcelJS, CSV
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js (v16+)
-- PostgreSQL database
-- SMTP server untuk email
-
-### Installation
-
-1. **Clone repository**
+### 1. **Clone Repository**
 ```bash
 git clone <repository-url>
 cd ujikom-be
 ```
 
-2. **Install dependencies**
+### 2. **Install Dependencies**
 ```bash
 npm install
 ```
 
-3. **Environment setup**
+### 3. **Environment setup**
 ```bash
-cp .env.example .env
+copy env.example .env
 # Edit .env dengan konfigurasi yang sesuai
 ```
 
-4. **Database setup**
+### 4. **Database setup**
 ```bash
 # Pastikan database PostgreSQL sudah running
 # Update konfigurasi database di .env
 ```
 
-5. **Run development server**
+### 5. **Run development server**
 ```bash
 npm run dev
 ```
@@ -141,7 +122,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USERNAME=postgres
 DB_PASSWORD=password
-DB_DATABASE=kapanggih
+DB_DATABASE=ramein
 
 # JWT
 JWT_SECRET=your-secret-key
@@ -159,120 +140,71 @@ FRONTEND_URL=http://localhost:3000
 
 ## 📊 Database Schema
 
-### Users
-- `id` (UUID, Primary Key)
-- `email` (String, Unique)
-- `password` (String, Hashed)
-- `name` (String)
-- `phone` (String)
-- `address` (String)
-- `education` (String)
-- `isVerified` (Boolean)
-- `verificationToken` (String)
-- `tokenExpiry` (Timestamp)
-- `resetToken` (String)
-- `resetTokenExpiry` (Timestamp)
-- `role` (Enum: USER/ADMIN)
+### User Table
+- `id` (UUID) - Primary key
+- `email` (VARCHAR) - Email user (unique)
+- `password` (VARCHAR) - Encrypted password
+- `name` (VARCHAR) - Nama lengkap
+- `phone` (VARCHAR) - Nomor telepon
+- `address` (VARCHAR) - Alamat
+- `education` (VARCHAR) - Pendidikan terakhir
+- `isVerified` (BOOLEAN) - Status verifikasi email
+- `role` (ENUM) - Role user (USER/ADMIN)
+- `createdAt` (TIMESTAMP) - Waktu pembuatan
+- `updatedAt` (TIMESTAMP) - Waktu update
 
-### Events
-- `id` (UUID, Primary Key)
-- `title` (String)
-- `date` (Date)
-- `time` (String)
-- `location` (String)
-- `flyer` (String, File path)
-- `certificate` (String, File path)
-- `description` (Text)
-- `createdBy` (String, User ID)
-- `isPublished` (Boolean)
-- `createdAt` (Timestamp)
-- `updatedAt` (Timestamp)
+### Event Table
+- `id` (UUID) - Primary key
+- `title` (VARCHAR) - Judul event
+- `date` (TIMESTAMP) - Tanggal event
+- `time` (VARCHAR) - Waktu event
+- `location` (VARCHAR) - Lokasi event
+- `flyer` (TEXT) - URL flyer
+- `certificate` (TEXT) - URL sertifikat template
+- `description` (TEXT) - Deskripsi event
+- `createdBy` (VARCHAR) - ID pembuat event
+- `isPublished` (BOOLEAN) - Status publikasi
+- `createdAt` (TIMESTAMP) - Waktu pembuatan
+- `updatedAt` (TIMESTAMP) - Waktu update
 
-### Participants
-- `id` (UUID, Primary Key)
-- `userId` (String, Foreign Key)
-- `eventId` (String, Foreign Key)
-- `tokenNumber` (String, Unique)
-- `hasAttended` (Boolean)
-- `attendedAt` (Timestamp)
-- `certificateUrl` (String)
-- `createdAt` (Timestamp)
-- `updatedAt` (Timestamp)
-
-## 🛡️ Security Features
-
-- ✅ Password hashing dengan bcrypt
-- ✅ JWT authentication
-- ✅ Role-based access control
-- ✅ Input validation
-- ✅ SQL injection protection
-- ✅ CORS configuration
-- ✅ Rate limiting
-- ✅ Session timeout
-
-## 📝 Scripts
-
-```bash
-# Development
-npm run dev          # Start development server
-npm run dev:watch    # Start with file watching
-
-# Production
-npm run build        # Build TypeScript
-npm start           # Start production server
-
-# Utilities
-npm run lint        # Type checking
-npm run clean       # Clean build files
-```
+### Participant Table
+- `id` (UUID) - Primary key
+- `userId` (UUID) - Foreign key ke user
+- `eventId` (UUID) - Foreign key ke event
+- `tokenNumber` (VARCHAR) - Token unik untuk daftar hadir
+- `hasAttended` (BOOLEAN) - Status kehadiran
+- `attendedAt` (TIMESTAMP) - Waktu kehadiran
+- `certificateUrl` (VARCHAR) - URL sertifikat
+- `createdAt` (TIMESTAMP) - Waktu pendaftaran
+- `updatedAt` (TIMESTAMP) - Waktu update
 
 ## 🧪 Testing
 
 ```bash
-# Run tests (coming soon)
-npm test
+# Test database connection
+npm run db:test
 
-# Run tests with coverage
-npm run test:coverage
+# Test connection pooler
+npm run db:test:pooler
+
+# Run database migrations
+npm run db:migrate
+
+# Seed initial data
+npm run db:seed
+
+# Setup complete database
+npm run db:setup
 ```
 
-## 📈 Monitoring & Logging
+## 📝 License
 
-- Morgan HTTP request logging
-- Error logging dengan stack trace
-- Performance monitoring
-- Health check endpoint
-
-## 🚀 Deployment
-
-### Production Build
-```bash
-npm run build
-npm start
-```
-
-### Docker (coming soon)
-```bash
-docker build -t kapanggih-backend .
-docker run -p 3001:3001 kapanggih-backend
-```
-
-## 🤝 Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Commit changes
-4. Push to branch
-5. Create Pull Request
-
-## 📄 License
-
-This project is licensed under the ISC License.
+ISC License
 
 ## 👥 Team
 
-- **Kapanggih Team** - UJIKOM Project
+**Ramein Team** - Event Management System Development
 
-## 📞 Support
+---
 
-Untuk pertanyaan dan dukungan, silakan buat issue di repository ini.
+**Ramein** - Membuat setiap kegiatan menjadi lebih bermakna! 🎉

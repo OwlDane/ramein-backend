@@ -56,6 +56,7 @@ app.use('/api/files', fileRoutes);
 app.get('/api/health', (_req, res) => {
     res.json({
         status: 'OK',
+        application: 'Ramein Event Management System',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: process.env.NODE_ENV || 'development'

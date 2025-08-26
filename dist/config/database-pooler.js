@@ -52,7 +52,7 @@ const databaseConfig = {
         rejectUnauthorized: false
     },
     entities: [User_1.User, Event_1.Event, Participant_1.Participant, KategoriKegiatan_1.KategoriKegiatan, EventPackage_1.EventPackage],
-    synchronize: false,
+    synchronize: process.env.NODE_ENV !== 'production',
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],
     subscribers: [],
@@ -72,6 +72,6 @@ const databaseConfig = {
         keepAliveInitialDelayMillis: 10000
     }
 };
-const AppDataSource = new typeorm_1.DataSource(databaseConfig);
-exports.default = AppDataSource;
-//# sourceMappingURL=database.js.map
+const AppDataSourcePooler = new typeorm_1.DataSource(databaseConfig);
+exports.default = AppDataSourcePooler;
+//# sourceMappingURL=database-pooler.js.map
