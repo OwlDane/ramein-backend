@@ -85,6 +85,54 @@ export class EventController {
         }
     }
 
+    // Publish event (set isPublished = true)
+    static async publish(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+
+            const event = await eventRepository.findOne({ where: { id } });
+            if (!event) {
+                return res.status(404).json({ message: 'Event tidak ditemukan' });
+            }
+
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Hanya admin yang dapat mempublikasi event' });
+            }
+
+            event.isPublished = true;
+            await eventRepository.save(event);
+
+            return res.json({ message: 'Event berhasil dipublikasikan', event });
+        } catch (error) {
+            console.error('Publish event error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mempublikasi event' });
+        }
+    }
+
+    // Unpublish event (set isPublished = false)
+    static async unpublish(req: AuthRequest, res: Response) {
+        try {
+            const { id } = req.params;
+
+            const event = await eventRepository.findOne({ where: { id } });
+            if (!event) {
+                return res.status(404).json({ message: 'Event tidak ditemukan' });
+            }
+
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Hanya admin yang dapat membatalkan publikasi event' });
+            }
+
+            event.isPublished = false;
+            await eventRepository.save(event);
+
+            return res.json({ message: 'Event berhasil dibatalkan publikasinya', event });
+        } catch (error) {
+            console.error('Unpublish event error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat membatalkan publikasi event' });
+        }
+    }
+
     // Get event by ID
     static async getById(req: Request, res: Response) {
         try {

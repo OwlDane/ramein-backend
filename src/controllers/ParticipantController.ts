@@ -6,6 +6,7 @@ import { AuthRequest } from '../middlewares/auth';
 import { sendEventRegistrationEmail } from '../services/emailService';
 import { MoreThan } from 'typeorm';
 import ExportService from '../services/exportService';
+import certificateService from '../services/certificateService';
 
 const participantRepository = AppDataSource.getRepository(Participant);
 const eventRepository = AppDataSource.getRepository(Event);
@@ -209,6 +210,30 @@ export class ParticipantController {
         } catch (error) {
             console.error('Upload certificate error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengunggah sertifikat' });
+        }
+    }
+
+    // Admin: Generate certificate for a participant (auto)
+    static async generateCertificate(req: AuthRequest, res: Response) {
+        try {
+            const { participantId } = req.params;
+
+            if (req.user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Unauthorized' });
+            }
+
+            const result = await certificateService.generateCertificate(participantId);
+            if (!result.success) {
+                return res.status(400).json({ message: result.error || 'Gagal membuat sertifikat' });
+            }
+
+            return res.json({
+                message: 'Sertifikat berhasil dibuat',
+                certificateUrl: result.certificateUrl
+            });
+        } catch (error) {
+            console.error('Generate certificate error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat membuat sertifikat' });
         }
     }
 
