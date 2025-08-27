@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
 import { Participant } from "./Participant";
+import { Certificate } from "./Certificate";
 import { EventPackage } from "./EventPackage";
 
 
@@ -13,6 +14,9 @@ export class Event {
 
     @Column()
     date: Date;
+
+    @Column()
+    eventDate: Date; // The actual date of the event for attendance
 
     @Column()
     time: string;
@@ -43,6 +47,12 @@ export class Event {
     @Column({ default: 0 })
     currentParticipants: number;
 
+    @Column({ nullable: true })
+    attendanceToken: string;
+
+    @Column({ nullable: true })
+    tokenExpiresAt: Date;
+
     @Column({ default: true })
     allowRegistration: boolean; // Whether registration is still open
 
@@ -57,6 +67,9 @@ export class Event {
 
     @OneToMany(() => Participant, participant => participant.event)
     participants: Participant[];
+
+    @OneToMany(() => Certificate, certificate => certificate.event)
+    certificates: Certificate[];
 
     @OneToMany(() => EventPackage, eventPackage => eventPackage.event)
     packages: EventPackage[];

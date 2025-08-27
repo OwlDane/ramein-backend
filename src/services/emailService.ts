@@ -56,8 +56,8 @@ export const sendResetPasswordEmail = async (email: string, token: string) => {
 };
 
 export const sendEventRegistrationEmail = async (
-  email: string, 
-  eventTitle: string, 
+  email: string,
+  eventTitle: string,
   tokenNumber: string
 ) => {
   try {
@@ -77,5 +77,28 @@ export const sendEventRegistrationEmail = async (
     await transporter.sendMail(mailOptions);
   } catch (error) {
     throw new AppError('Gagal mengirim email konfirmasi pendaftaran', 500);
+  }
+
+};
+
+// src/services/emailService.ts
+export const sendOTPEmail = async (email: string, otp: string) => {
+  try {
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      to: email,
+      subject: 'Your Verification Code',
+      html: `
+        <h1>Verification Code</h1>
+        <p>Your verification code is:</p>
+        <h2>${otp}</h2>
+        <p>This code will expire in 5 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    throw new AppError('Failed to send OTP email', 500);
   }
 };

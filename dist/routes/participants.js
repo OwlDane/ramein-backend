@@ -10,6 +10,7 @@ router.get('/my-events', auth_1.auth, ParticipantController_1.ParticipantControl
 router.get('/my-certificates', auth_1.auth, ParticipantController_1.ParticipantController.getUserCertificates);
 router.get('/event/:eventId/participants', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.getEventParticipants);
 router.post('/certificate/:participantId', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.uploadCertificate);
+router.post('/certificate/:participantId/generate', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.generateCertificate);
 router.get('/statistics/monthly', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.getMonthlyStatistics);
 router.get('/export/:eventId', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.exportParticipants);
 router.get('/export/statistics/monthly', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.exportMonthlyStatistics);

@@ -3,10 +3,22 @@ import AppDataSource from '../config/database';
 import { User, UserRole } from '../entities/User'; // pastikan UserRole di-import
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
-import { sendVerificationEmail, sendResetPasswordEmail } from '../services/emailService';
+import { sendVerificationEmail, sendResetPasswordEmail, sendOTPEmail } from '../services/emailService';
 
 // Initialize database connection if not initialized
 const userRepository = AppDataSource.getRepository(User);
+
+// Helper function to generate OTP
+const generateOTP = (): string => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Helper function to check if OTP is expired (5 minutes)
+const isOTPExpired = (otpCreatedAt: Date): boolean => {
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - otpCreatedAt.getTime()) / (1000 * 60);
+    return diffInMinutes > 5;
+};
 
 export class AuthController {
     // Register new user
@@ -54,7 +66,7 @@ export class AuthController {
         }
     }
 
-    // Verify email
+    // Verify email (existing method)
     static async verifyEmail(req: Request, res: Response) {
         try {
             const { token } = req.body;
@@ -71,7 +83,7 @@ export class AuthController {
                 return res.status(400).json({ message: 'Token verifikasi tidak valid' });
             }
 
-            if (user.isVerified) {
+            if (user.isOtpVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi sebelumnya' });
             }
 
@@ -81,7 +93,7 @@ export class AuthController {
             }
 
             // Mark email as verified
-            user.isVerified = true;
+            user.isOtpVerified = true;
             user.verificationToken = null;
             user.tokenExpiry = null;
 
@@ -93,6 +105,85 @@ export class AuthController {
         } catch (error) {
             console.error('Email verification error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat verifikasi email' });
+        }
+    }
+
+    // NEW: Request OTP verification
+    static async requestVerification(req: Request, res: Response) {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ message: 'Email diperlukan' });
+            }
+
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+
+            // Check if already verified (using the existing field name)
+            if (user.isEmailVerified || user.isOtpVerified) {
+                return res.status(400).json({ message: 'Email sudah diverifikasi' });
+            }
+
+            const otp = generateOTP();
+            user.otp = otp;
+            user.otpCreatedAt = new Date();
+
+            await userRepository.save(user);
+            await sendOTPEmail(email, otp);
+
+            return res.json({ 
+                message: 'OTP telah dikirim ke email Anda' 
+            });
+        } catch (error) {
+            console.error('Request verification error:', error);
+            return res.status(500).json({ message: 'Gagal mengirim OTP' });
+        }
+    }
+
+    // NEW: Verify OTP
+    static async verifyOTP(req: Request, res: Response) {
+        try {
+            const { email, otp } = req.body;
+
+            if (!email || !otp) {
+                return res.status(400).json({ message: 'Email dan OTP diperlukan' });
+            }
+
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+
+            // Check if already verified
+            if (user.isEmailVerified || user.isOtpVerified) {
+                return res.status(400).json({ message: 'Email sudah diverifikasi' });
+            }
+
+            if (!user.otp || user.otp !== otp) {
+                return res.status(400).json({ message: 'OTP tidak valid' });
+            }
+
+            if (!user.otpCreatedAt || isOTPExpired(user.otpCreatedAt)) {
+                return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
+            }
+
+            // Mark as verified and clear OTP data
+            user.isEmailVerified = true;
+            user.isOtpVerified = true;
+            user.otp = null;
+            user.otpCreatedAt = null;
+
+            await userRepository.save(user);
+
+            return res.json({ 
+                message: 'Email berhasil diverifikasi' 
+            });
+        } catch (error) {
+            console.error('Verify OTP error:', error);
+            return res.status(500).json({ message: 'Gagal memverifikasi OTP' });
         }
     }
 
@@ -110,7 +201,7 @@ export class AuthController {
                 return res.status(404).json({ message: 'Email tidak ditemukan' });
             }
 
-            if (!user.isVerified) {
+            if (!user.isEmailVerified && !user.isOtpVerified) {
                 return res.status(400).json({ message: 'Email belum diverifikasi' });
             }
 
@@ -183,7 +274,7 @@ export class AuthController {
         }
     }
 
-    // Login
+    // UPDATED: Login with verification check
     static async login(req: Request, res: Response) {
         try {
             // Initialize database connection if not initialized
@@ -193,13 +284,22 @@ export class AuthController {
             const userRepository = AppDataSource.getRepository(User);
             
             const { email, password } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email dan password diperlukan' });
+            }
+
             const user = await userRepository.findOne({ where: { email } });
             if (!user) {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
 
-            if (!user.isVerified) {
-                return res.status(401).json({ message: 'Email belum diverifikasi' });
+            // Check if email is verified (either method)
+            if (!user.isEmailVerified && !user.isOtpVerified) {
+                return res.status(403).json({ 
+                    message: 'Silakan verifikasi email Anda terlebih dahulu',
+                    requiresVerification: true 
+                });
             }
 
             const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -248,7 +348,8 @@ export class AuthController {
             adminUser.address = address;
             adminUser.education = education;
             adminUser.role = UserRole.ADMIN; // ✅ pakai enum
-            adminUser.isVerified = true; // Admin otomatis diverifikasi
+            adminUser.isEmailVerified = true; // Admin otomatis diverifikasi
+            adminUser.isOtpVerified = true; // Tambahkan ini juga
 
             await userRepository.save(adminUser);
 

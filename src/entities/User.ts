@@ -29,8 +29,8 @@ export class User {
     @Column()
     education: string;
 
-    @Column({ name: "isVerified", default: false })
-    isVerified: boolean;
+    @Column({ name: "is_email_verified", default: false })
+    isEmailVerified: boolean;
 
     @Column({ name: "verificationToken", type: 'varchar', nullable: true })
     verificationToken: string | null;
@@ -59,4 +59,13 @@ export class User {
 
     @OneToMany(() => Participant, participant => participant.user)
     participants: Participant[];
+
+    @Column({ name: "otp", nullable: true })
+    otp: string | null;
+
+    @Column({ name: "otp_created_at", type: "timestamp", nullable: true })
+    otpCreatedAt: Date | null;
+
+    @Column({ name: "is_otp_verified", default: false })
+    isOtpVerified: boolean;
 }

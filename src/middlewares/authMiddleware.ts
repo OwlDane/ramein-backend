@@ -1,61 +1,112 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import db from '../config/database';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import AppDataSource from '../config/database';
+import { User } from '../entities/User';
 
-interface JwtPayload {
+// Define custom JWT payload interface
+interface JwtUserPayload extends JwtPayload {
     userId: string;
     role: string;
 }
 
+// Extend Express Request interface globally
 declare global {
     namespace Express {
         interface Request {
-            user?: JwtPayload;
+            user?: User;
+            token?: string;
         }
     }
 }
 
 export const authMiddleware = async (
-    req: Request,
-    res: Response,
+    req: Request, 
+    res: Response, 
     next: NextFunction
-) => {
+): Promise<void> => {
     try {
+        // Get token from header - using headers.authorization instead of header()
         const authHeader = req.headers.authorization;
-        if (!authHeader) {
-            return res.status(401).json({ message: 'No token provided' });
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            res.status(401).json({
+                success: false,
+                error: 'No token provided or invalid format'
+            });
+            return;
         }
 
-        const token = authHeader.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ message: 'Invalid token format' });
+        // Extract token
+        const token = authHeader.slice(7); // Remove 'Bearer ' prefix
+
+        // Verify token
+        const decoded = jwt.verify(
+            token, 
+            process.env.JWT_SECRET || 'your_jwt_secret'
+        ) as JwtUserPayload;
+
+        // Get user from database
+        const userRepository = AppDataSource.getRepository(User);
+        const user = await userRepository.findOne({ 
+            where: { id: decoded.userId } 
+        });
+
+        if (!user) {
+            res.status(401).json({
+                success: false,
+                error: 'User not found'
+            });
+            return;
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JwtPayload;
-
-        // Check if user still exists
-        const user = await db.query(
-            'SELECT id, role FROM users WHERE id = $1',
-            [decoded.userId]
-        );
-
-        if (user.rows.length === 0) {
-            return res.status(401).json({ message: 'User no longer exists' });
-        }
-
-        // Add user info to request
-        req.user = {
-            userId: decoded.userId,
-            role: decoded.role
-        };
-
-        return next(); // ✅ Tambahkan return di sini
+        // Attach user and token to request
+        req.user = user;
+        req.token = token;
+        
+        next();
     } catch (error) {
+        console.error('Auth middleware error:', error);
+        
         if (error instanceof jwt.JsonWebTokenError) {
-            return res.status(401).json({ message: 'Invalid token' });
+            res.status(401).json({
+                success: false,
+                error: 'Invalid token'
+            });
+        } else if (error instanceof jwt.TokenExpiredError) {
+            res.status(401).json({
+                success: false,
+                error: 'Token expired'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: 'Internal server error'
+            });
+        }
+    }
+};
+
+// Role-based authorization middleware
+export const authorize = (allowedRoles: string[] = []) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+        // Check if user exists (should be set by authMiddleware)
+        if (!req.user) {
+            res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+            return;
         }
 
-        console.error('Auth middleware error:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
+        // Check role authorization
+        if (allowedRoles.length > 0 && !allowedRoles.includes(req.user.role)) {
+            res.status(403).json({
+                success: false,
+                error: 'Insufficient permissions'
+            });
+            return;
+        }
+
+        next();
+    };
 };
