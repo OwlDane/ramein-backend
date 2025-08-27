@@ -14,6 +14,7 @@ const typeorm_1 = require("typeorm");
 const User_1 = require("./User");
 const Event_1 = require("./Event");
 const EventPackage_1 = require("./EventPackage");
+const Certificate_1 = require("./Certificate");
 let Participant = class Participant {
 };
 exports.Participant = Participant;
@@ -48,6 +49,26 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
+], Participant.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Participant.prototype, "email", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Participant.prototype, "phone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Participant.prototype, "registrationSource", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'jsonb', nullable: true }),
+    __metadata("design:type", Object)
+], Participant.prototype, "additionalInfo", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
 ], Participant.prototype, "certificateUrl", void 0);
 __decorate([
     (0, typeorm_1.Column)({ type: "text", nullable: true }),
@@ -61,6 +82,10 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)(),
     __metadata("design:type", Date)
 ], Participant.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Certificate_1.Certificate, certificate => certificate.participant),
+    __metadata("design:type", Array)
+], Participant.prototype, "certificates", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => User_1.User, user => user.participants),
     (0, typeorm_1.JoinColumn)({ name: "userId" }),

@@ -27,6 +27,18 @@ async function runMigrations() {
             }
         }
 
+        // Ensure new columns exist on event table (category, price)
+        try {
+            await AppDataSource.query(`
+                ALTER TABLE "event"
+                ADD COLUMN IF NOT EXISTS "category" varchar,
+                ADD COLUMN IF NOT EXISTS "price" numeric(10,2) DEFAULT 0 NOT NULL;
+            `);
+            console.log('✅ Ensured event.category and event.price columns exist');
+        } catch (error) {
+            console.log('⚠️  Skipped adding category/price columns (might already exist)');
+        }
+
         console.log('✅ All migrations completed successfully');
         
         // Close connection

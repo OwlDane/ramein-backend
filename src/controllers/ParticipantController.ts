@@ -6,7 +6,7 @@ import { AuthRequest } from '../middlewares/auth';
 import { sendEventRegistrationEmail } from '../services/emailService';
 import { MoreThan } from 'typeorm';
 import ExportService from '../services/exportService';
-import certificateService from '../services/certificateService';
+import { certificateService } from '../services/certificateService';
 
 const participantRepository = AppDataSource.getRepository(Participant);
 const eventRepository = AppDataSource.getRepository(Event);
@@ -222,14 +222,17 @@ export class ParticipantController {
                 return res.status(403).json({ message: 'Unauthorized' });
             }
 
-            const result = await certificateService.generateCertificate(participantId);
-            if (!result.success) {
-                return res.status(400).json({ message: result.error || 'Gagal membuat sertifikat' });
+            // Get participant to obtain eventId
+            const participant = await participantRepository.findOne({ where: { id: participantId } });
+            if (!participant) {
+                return res.status(404).json({ message: 'Peserta tidak ditemukan' });
             }
+
+            const created = await certificateService.generateCertificate(participantId, participant.eventId, req.user.id);
 
             return res.json({
                 message: 'Sertifikat berhasil dibuat',
-                certificateUrl: result.certificateUrl
+                certificateUrl: created.certificateUrl
             });
         } catch (error) {
             console.error('Generate certificate error:', error);

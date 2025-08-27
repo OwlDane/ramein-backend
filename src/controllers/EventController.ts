@@ -52,7 +52,7 @@ export class EventController {
     // Get all events
     static async getAll(req: Request, res: Response) {
         try {
-            const { search, sort } = req.query;
+            const { search, sort, category } = req.query;
             
             let query = eventRepository.createQueryBuilder('event');
 
@@ -64,11 +64,28 @@ export class EventController {
                 );
             }
 
-            // Sort by date
-            if (sort === 'nearest') {
-                query = query.orderBy('event.date', 'ASC');
-            } else if (sort === 'furthest') {
-                query = query.orderBy('event.date', 'DESC');
+            // Filter by category (supports either explicit category on event
+            // or join to kategori_kegiatan by matching title/slug if needed in future)
+            if (category && String(category).toLowerCase() !== 'all') {
+                query = query.andWhere('LOWER(event.category) = LOWER(:category)', { category });
+            }
+
+            // Sort
+            switch (sort) {
+                case 'nearest':
+                    query = query.orderBy('event.date', 'ASC');
+                    break;
+                case 'furthest':
+                    query = query.orderBy('event.date', 'DESC');
+                    break;
+                case 'price-asc':
+                    query = query.orderBy('event.price', 'ASC');
+                    break;
+                case 'price-desc':
+                    query = query.orderBy('event.price', 'DESC');
+                    break;
+                default:
+                    query = query.orderBy('event.date', 'ASC');
             }
 
             // Only show published events and future events

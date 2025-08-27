@@ -43,6 +43,14 @@ const bcrypt = __importStar(require("bcryptjs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const emailService_1 = require("../services/emailService");
 const userRepository = database_1.default.getRepository(User_1.User);
+const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+};
+const isOTPExpired = (otpCreatedAt) => {
+    const now = new Date();
+    const diffInMinutes = (now.getTime() - otpCreatedAt.getTime()) / (1000 * 60);
+    return diffInMinutes > 5;
+};
 class AuthController {
     static async register(req, res) {
         try {
@@ -93,13 +101,13 @@ class AuthController {
             if (!user) {
                 return res.status(400).json({ message: 'Token verifikasi tidak valid' });
             }
-            if (user.isVerified) {
+            if (user.isOtpVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi sebelumnya' });
             }
             if (user.tokenExpiry && new Date() > user.tokenExpiry) {
                 return res.status(400).json({ message: 'Token verifikasi sudah kadaluarsa' });
             }
-            user.isVerified = true;
+            user.isOtpVerified = true;
             user.verificationToken = null;
             user.tokenExpiry = null;
             await userRepository.save(user);
@@ -112,6 +120,66 @@ class AuthController {
             return res.status(500).json({ message: 'Terjadi kesalahan saat verifikasi email' });
         }
     }
+    static async requestVerification(req, res) {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                return res.status(400).json({ message: 'Email diperlukan' });
+            }
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+            if (user.isEmailVerified || user.isOtpVerified) {
+                return res.status(400).json({ message: 'Email sudah diverifikasi' });
+            }
+            const otp = generateOTP();
+            user.otp = otp;
+            user.otpCreatedAt = new Date();
+            await userRepository.save(user);
+            await (0, emailService_1.sendOTPEmail)(email, otp);
+            return res.json({
+                message: 'OTP telah dikirim ke email Anda'
+            });
+        }
+        catch (error) {
+            console.error('Request verification error:', error);
+            return res.status(500).json({ message: 'Gagal mengirim OTP' });
+        }
+    }
+    static async verifyOTP(req, res) {
+        try {
+            const { email, otp } = req.body;
+            if (!email || !otp) {
+                return res.status(400).json({ message: 'Email dan OTP diperlukan' });
+            }
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+            if (user.isEmailVerified || user.isOtpVerified) {
+                return res.status(400).json({ message: 'Email sudah diverifikasi' });
+            }
+            if (!user.otp || user.otp !== otp) {
+                return res.status(400).json({ message: 'OTP tidak valid' });
+            }
+            if (!user.otpCreatedAt || isOTPExpired(user.otpCreatedAt)) {
+                return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
+            }
+            user.isEmailVerified = true;
+            user.isOtpVerified = true;
+            user.otp = null;
+            user.otpCreatedAt = null;
+            await userRepository.save(user);
+            return res.json({
+                message: 'Email berhasil diverifikasi'
+            });
+        }
+        catch (error) {
+            console.error('Verify OTP error:', error);
+            return res.status(500).json({ message: 'Gagal memverifikasi OTP' });
+        }
+    }
     static async requestPasswordReset(req, res) {
         try {
             const { email } = req.body;
@@ -122,7 +190,7 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({ message: 'Email tidak ditemukan' });
             }
-            if (!user.isVerified) {
+            if (!user.isEmailVerified && !user.isOtpVerified) {
                 return res.status(400).json({ message: 'Email belum diverifikasi' });
             }
             const resetToken = Math.random().toString(36).substring(2, 15);
@@ -183,12 +251,18 @@ class AuthController {
             }
             const userRepository = database_1.default.getRepository(User_1.User);
             const { email, password } = req.body;
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email dan password diperlukan' });
+            }
             const user = await userRepository.findOne({ where: { email } });
             if (!user) {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
-            if (!user.isVerified) {
-                return res.status(401).json({ message: 'Email belum diverifikasi' });
+            if (!user.isEmailVerified && !user.isOtpVerified) {
+                return res.status(403).json({
+                    message: 'Silakan verifikasi email Anda terlebih dahulu',
+                    requiresVerification: true
+                });
             }
             const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
@@ -226,7 +300,8 @@ class AuthController {
             adminUser.address = address;
             adminUser.education = education;
             adminUser.role = User_1.UserRole.ADMIN;
-            adminUser.isVerified = true;
+            adminUser.isEmailVerified = true;
+            adminUser.isOtpVerified = true;
             await userRepository.save(adminUser);
             return res.status(201).json({
                 message: 'Admin berhasil dibuat',

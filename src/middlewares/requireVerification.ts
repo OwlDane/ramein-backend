@@ -5,7 +5,7 @@ import { User } from "../entities/User";
 export const requireVerification = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         // Pastikan user sudah terauthentikasi (dari auth middleware sebelumnya)
-        if (!req.user || !req.user.userId) {
+        if (!req.user || !(req.user as any).id) {
             res.status(401).json({
                 message: 'Authentication required'
             });
@@ -21,7 +21,7 @@ export const requireVerification = async (req: Request, res: Response, next: Nex
         
         // Ambil data user lengkap dari database
         const user = await userRepository.findOne({ 
-            where: { id: req.user.userId } 
+            where: { id: (req.user as any).id } 
         });
 
         if (!user) {

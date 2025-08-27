@@ -51,7 +51,7 @@ __decorate([
 __decorate([
     (0, typeorm_1.Column)({ name: "isVerified", default: false }),
     __metadata("design:type", Boolean)
-], User.prototype, "isVerified", void 0);
+], User.prototype, "isEmailVerified", void 0);
 __decorate([
     (0, typeorm_1.Column)({ name: "verificationToken", type: 'varchar', nullable: true }),
     __metadata("design:type", String)
@@ -88,6 +88,18 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => Participant_1.Participant, participant => participant.user),
     __metadata("design:type", Array)
 ], User.prototype, "participants", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "otp", nullable: true, select: false }),
+    __metadata("design:type", String)
+], User.prototype, "otp", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "otp_created_at", type: "timestamp", nullable: true, select: false }),
+    __metadata("design:type", Date)
+], User.prototype, "otpCreatedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "is_otp_verified", default: false, select: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "isOtpVerified", void 0);
 exports.User = User = __decorate([
     (0, typeorm_1.Entity)("user")
 ], User);

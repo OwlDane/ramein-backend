@@ -8,12 +8,14 @@ const cors_1 = __importDefault(require("cors"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
+const logger_1 = __importDefault(require("./utils/logger"));
 const eventCategoryRoutes_1 = __importDefault(require("./routes/eventCategoryRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const events_1 = __importDefault(require("./routes/events"));
 const participants_1 = __importDefault(require("./routes/participants"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
+const certificateRoutes_1 = __importDefault(require("./routes/certificateRoutes"));
 const errorHandler_1 = require("./middlewares/errorHandler");
 const sessionTimeout_1 = __importDefault(require("./middlewares/sessionTimeout"));
 dotenv_1.default.config();
@@ -26,7 +28,18 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json({ limit: '10mb' }));
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
-app.use((0, morgan_1.default)('dev'));
+const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use((0, morgan_1.default)(morganFormat, {
+    stream: { write: (message) => logger_1.default.http(message.trim()) }
+}));
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        logger_1.default.info(`${req.method} ${req.originalUrl} - ${res.statusCode} - ${duration}ms`);
+    });
+    next();
+});
 app.use(sessionTimeout_1.default);
 app.use('/api/files', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes_1.default);
@@ -35,6 +48,7 @@ app.use('/api/events', events_1.default);
 app.use('/api/participants', participants_1.default);
 app.use('/api/admin', adminRoutes_1.default);
 app.use('/api/files', fileRoutes_1.default);
+app.use('/api/certificates', certificateRoutes_1.default);
 app.get('/api/health', (_req, res) => {
     res.json({
         status: 'OK',
@@ -45,6 +59,15 @@ app.get('/api/health', (_req, res) => {
     });
 });
 app.use(errorHandler_1.notFoundHandler);
+app.use((err, req, _res, next) => {
+    logger_1.default.error(`Error: ${err.message || 'Unknown error'}`, {
+        path: req.path,
+        method: req.method,
+        body: req.body,
+        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+    });
+    next(err);
+});
 app.use(errorHandler_1.errorHandler);
 exports.default = app;
 //# sourceMappingURL=app.js.map

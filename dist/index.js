@@ -39,19 +39,26 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
 const database_1 = __importDefault(require("./config/database"));
 const app_1 = __importDefault(require("./app"));
+const logger_1 = __importDefault(require("./utils/logger"));
 const dotenv = __importStar(require("dotenv"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 dotenv.config();
 const PORT = process.env.PORT || 3001;
+const logsDir = path_1.default.join(process.cwd(), 'logs');
+if (!fs_1.default.existsSync(logsDir)) {
+    fs_1.default.mkdirSync(logsDir);
+}
 const gracefulShutdown = (signal) => {
-    console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+    logger_1.default.info(`Received ${signal}. Starting graceful shutdown...`);
     if (database_1.default.isInitialized) {
         database_1.default.destroy()
             .then(() => {
-            console.log('Database connection closed.');
+            logger_1.default.info('Database connection closed.');
             process.exit(0);
         })
             .catch((error) => {
-            console.error('Error closing database connection:', error);
+            logger_1.default.error('Error closing database connection:', error);
             process.exit(1);
         });
     }
@@ -60,15 +67,18 @@ const gracefulShutdown = (signal) => {
     }
 };
 process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+    logger_1.default.error(`Uncaught Exception: ${error.message}`, { stack: error.stack });
     gracefulShutdown('uncaughtException');
 });
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger_1.default.error('Unhandled Rejection', { reason, promise });
     gracefulShutdown('unhandledRejection');
 });
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('unhandledRejection', (reason, promise) => {
+    logger_1.default.warn('Unhandled Rejection at:', { promise, reason });
+});
 async function startServer() {
     try {
         await database_1.default.initialize();
@@ -88,5 +98,8 @@ async function startServer() {
         process.exit(1);
     }
 }
-startServer();
+startServer().catch(error => {
+    logger_1.default.error('Failed to start server:', error);
+    process.exit(1);
+});
 //# sourceMappingURL=index.js.map

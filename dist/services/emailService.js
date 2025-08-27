@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendEventRegistrationEmail = exports.sendResetPasswordEmail = exports.sendVerificationEmail = void 0;
+exports.sendOTPEmail = exports.sendEventRegistrationEmail = exports.sendResetPasswordEmail = exports.sendVerificationEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const errorService_1 = require("./errorService");
 const transporter = nodemailer_1.default.createTransport({
@@ -80,4 +80,25 @@ const sendEventRegistrationEmail = async (email, eventTitle, tokenNumber) => {
     }
 };
 exports.sendEventRegistrationEmail = sendEventRegistrationEmail;
+const sendOTPEmail = async (email, otp) => {
+    try {
+        const mailOptions = {
+            from: process.env.SMTP_USER,
+            to: email,
+            subject: 'Your Verification Code',
+            html: `
+        <h1>Verification Code</h1>
+        <p>Your verification code is:</p>
+        <h2>${otp}</h2>
+        <p>This code will expire in 5 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+        };
+        await transporter.sendMail(mailOptions);
+    }
+    catch (error) {
+        throw new errorService_1.AppError('Failed to send OTP email', 500);
+    }
+};
+exports.sendOTPEmail = sendOTPEmail;
 //# sourceMappingURL=emailService.js.map

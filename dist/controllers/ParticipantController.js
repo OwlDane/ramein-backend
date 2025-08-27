@@ -10,7 +10,7 @@ const Event_1 = require("../entities/Event");
 const emailService_1 = require("../services/emailService");
 const typeorm_1 = require("typeorm");
 const exportService_1 = __importDefault(require("../services/exportService"));
-const certificateService_1 = __importDefault(require("../services/certificateService"));
+const certificateService_1 = require("../services/certificateService");
 const participantRepository = database_1.default.getRepository(Participant_1.Participant);
 const eventRepository = database_1.default.getRepository(Event_1.Event);
 class ParticipantController {
@@ -176,13 +176,14 @@ class ParticipantController {
             if (req.user.role !== 'ADMIN') {
                 return res.status(403).json({ message: 'Unauthorized' });
             }
-            const result = await certificateService_1.default.generateCertificate(participantId);
-            if (!result.success) {
-                return res.status(400).json({ message: result.error || 'Gagal membuat sertifikat' });
+            const participant = await participantRepository.findOne({ where: { id: participantId } });
+            if (!participant) {
+                return res.status(404).json({ message: 'Peserta tidak ditemukan' });
             }
+            const created = await certificateService_1.certificateService.generateCertificate(participantId, participant.eventId, req.user.id);
             return res.json({
                 message: 'Sertifikat berhasil dibuat',
-                certificateUrl: result.certificateUrl
+                certificateUrl: created.certificateUrl
             });
         }
         catch (error) {

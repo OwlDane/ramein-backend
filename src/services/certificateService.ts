@@ -362,7 +362,7 @@ export class CertificateService {
             
             const event = await this.eventRepository.findOne({ 
                 where: { id: eventId },
-                select: ['id', 'title', 'eventDate']
+                select: ['id', 'title', 'date']
             });
             
             if (!event) {
@@ -389,7 +389,7 @@ export class CertificateService {
                             event: {
                                 id: event.id,
                                 title: event.title,
-                                date: event.eventDate
+                                date: event.date
                             },
                             generatedAt: new Date().toISOString(),
                             count: certificates.length,
@@ -606,7 +606,7 @@ export class CertificateService {
             event: {
                 id: certificate.event.id,
                 title: certificate.event.title,
-                eventDate: certificate.event.eventDate // Fixed: use eventDate from Event entity
+                eventDate: certificate.event.date
             },
             verificationUrl: `${process.env.APP_URL}/verify/${certificate.certificateNumber}`
         };

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Event = void 0;
 const typeorm_1 = require("typeorm");
 const Participant_1 = require("./Participant");
+const Certificate_1 = require("./Certificate");
 const EventPackage_1 = require("./EventPackage");
 let Event = class Event {
 };
@@ -57,22 +58,6 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Event.prototype, "isPublished", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ default: 0 }),
-    __metadata("design:type", Number)
-], Event.prototype, "maxParticipants", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: 0 }),
-    __metadata("design:type", Number)
-], Event.prototype, "currentParticipants", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ default: true }),
-    __metadata("design:type", Boolean)
-], Event.prototype, "allowRegistration", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Date)
-], Event.prototype, "registrationDeadline", void 0);
-__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Event.prototype, "createdAt", void 0);
@@ -84,6 +69,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => Participant_1.Participant, participant => participant.event),
     __metadata("design:type", Array)
 ], Event.prototype, "participants", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => Certificate_1.Certificate, certificate => certificate.event),
+    __metadata("design:type", Array)
+], Event.prototype, "certificates", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => EventPackage_1.EventPackage, eventPackage => eventPackage.event),
     __metadata("design:type", Array)

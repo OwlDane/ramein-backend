@@ -1,129 +1,74 @@
-import { MoreThanOrEqual } from 'typeorm';
 import AppDataSource from '../config/database';
-import { Event } from '../entities/Event';
+import type { Event } from '../entities/Event';
 import { Participant } from '../entities/Participant';
-import { generateAttendanceToken, isValidTokenFormat } from '../utils/tokenGenerator';
 
 export class AttendanceService {
-    private eventRepository = AppDataSource.getRepository(Event);
     private participantRepository = AppDataSource.getRepository(Participant);
 
     /**
-     * Generate attendance token for an event
-     * @param eventId - Event ID
-     * @returns Object containing token and expiration date
+     * Validate attendance is allowed (only on/after start time)
      */
-    async generateAttendanceToken(eventId: string): Promise<{ token: string; expiresAt: Date }> {
-        // Initialize database connection if not initialized
-        if (!AppDataSource.isInitialized) {
-            await AppDataSource.initialize();
-        }
+    private isAttendanceOpen(event: Event): boolean {
+        const now = new Date();
+        const eventDateTime = new Date(event.date);
+        const [hh, mm] = event.time.split(':');
+        eventDateTime.setHours(parseInt(hh, 10));
+        eventDateTime.setMinutes(parseInt(mm, 10));
+        return now >= eventDateTime;
+    }
 
-        const event = await this.eventRepository.findOne({
-            where: { id: eventId },
-            relations: ['participants']
-        });
-
-        if (!event) {
-            throw new Error('Event not found');
-        }
-
-        // Check if event is in the future or today
-        const today = new Date();
-        const eventDate = new Date(event.eventDate);
-
-        if (eventDate < today && eventDate.toDateString() !== today.toDateString()) {
-            throw new Error('Cannot generate token for past events');
-        }
-
-        // Generate token that's valid for 24 hours
-        const token = generateAttendanceToken(8); // Use specific attendance token generator
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
-
-        // Save token to event
-        event.attendanceToken = token;
-        event.tokenExpiresAt = expiresAt;
-
-        await this.eventRepository.save(event);
-
+    /**
+     * Generate attendance token (transient; not persisted)
+     */
+    async generateAttendanceToken(_eventId: string): Promise<{ token: string; expiresAt: Date }> {
+        const token = Math.random().toString(36).slice(2, 10).toUpperCase();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
         return { token, expiresAt };
     }
 
     /**
-     * Validate attendance token for an event
-     * @param eventId - Event ID
-     * @param token - Attendance token
-     * @returns Boolean indicating if token is valid
+     * Mark attendance for a participant using their registration token
      */
-    async validateAttendanceToken(eventId: string, token: string): Promise<boolean> {
-        if (!token || !isValidTokenFormat(token)) {
-            return false;
-        }
-
-        // Initialize database connection if not initialized
-        if (!AppDataSource.isInitialized) {
-            await AppDataSource.initialize();
-        }
-
-        const event = await this.eventRepository.findOne({
-            where: {
-                id: eventId,
-                attendanceToken: token,
-                tokenExpiresAt: MoreThanOrEqual(new Date())
-            }
-        });
-
-        return !!event;
-    }
-
-    /**
-     * Mark attendance for a participant using token
-     * @param participantId - Participant ID
-     * @param token - Attendance token
-     * @returns Boolean indicating success
-     */
-    async markAttendance(participantId: string, token: string): Promise<boolean> {
-        // Initialize database connection if not initialized
+    async markAttendanceByRegistrationToken(eventId: string, userId: string, token: string): Promise<boolean> {
         if (!AppDataSource.isInitialized) {
             await AppDataSource.initialize();
         }
 
         const participant = await this.participantRepository.findOne({
-            where: { id: participantId },
+            where: { eventId, userId, tokenNumber: token },
             relations: ['event']
         });
 
         if (!participant) {
-            throw new Error('Participant not found');
+            throw new Error('Invalid token or participant not found');
         }
 
-        // Check if already attended
         if (participant.hasAttended) {
-            throw new Error('Attendance already marked for this participant');
+            throw new Error('Attendance already marked');
         }
 
-        // Check if token is valid for the event
-        const isValid = await this.validateAttendanceToken(participant.event.id, token);
-        if (!isValid) {
-            throw new Error('Invalid or expired attendance token');
+        if (!this.isAttendanceOpen(participant.event)) {
+            throw new Error('Attendance is not open yet');
         }
 
-        // Check if attendance is on the event day
-        const today = new Date();
-        const eventDate = new Date(participant.event.eventDate);
-
-        if (today.toDateString() !== eventDate.toDateString()) {
-            throw new Error('Attendance can only be marked on the event day');
-        }
-
-        // Mark attendance
         participant.hasAttended = true;
         participant.attendedAt = new Date();
-
         await this.participantRepository.save(participant);
-
         return true;
+    }
+
+    /**
+     * Compatibility wrapper to mark attendance by participantId
+     */
+    async markAttendance(participantId: string, token: string): Promise<boolean> {
+        if (!AppDataSource.isInitialized) {
+            await AppDataSource.initialize();
+        }
+        const participant = await this.participantRepository.findOne({ where: { id: participantId }, relations: ['event'] });
+        if (!participant) {
+            throw new Error('Participant not found');
+        }
+        return this.markAttendanceByRegistrationToken(participant.eventId, participant.userId, token);
     }
 
     /**
@@ -138,15 +83,8 @@ export class AttendanceService {
         }
 
         const [total, attended] = await Promise.all([
-            this.participantRepository.count({
-                where: { event: { id: eventId } }
-            }),
-            this.participantRepository.count({
-                where: {
-                    event: { id: eventId },
-                    hasAttended: true
-                }
-            })
+            this.participantRepository.count({ where: { eventId } }),
+            this.participantRepository.count({ where: { eventId, hasAttended: true } })
         ]);
 
         return {
@@ -169,68 +107,24 @@ export class AttendanceService {
         }
 
         const participants = await this.participantRepository.find({
-            where: { event: { id: eventId } },
+            where: { eventId },
             relations: ['user'],
             select: {
                 id: true,
                 hasAttended: true,
                 attendedAt: true,
-                user: {
-                    id: true,
-                    name: true,
-                    email: true
-                }
+                user: { id: true, name: true, email: true }
             },
             order: { hasAttended: 'DESC', attendedAt: 'ASC' }
         });
 
-        return participants.map(participant => ({
-            id: participant.id,
-            user: {
-                id: participant.user.id,
-                name: participant.user.name,
-                email: participant.user.email
-            },
-            hasAttended: participant.hasAttended,
-            attendedAt: participant.attendedAt,
-            status: participant.hasAttended ? 'Present' : 'Absent'
+        return participants.map(p => ({
+            id: p.id,
+            user: { id: p.user.id, name: p.user.name, email: p.user.email },
+            hasAttended: p.hasAttended,
+            attendedAt: p.attendedAt,
+            status: p.hasAttended ? 'Present' : 'Absent'
         }));
-    }
-
-    /**
-     * Check if event token is still valid
-     * @param eventId - Event ID
-     * @returns Token validity info
-     */
-    async getTokenStatus(eventId: string) {
-        // Initialize database connection if not initialized
-        if (!AppDataSource.isInitialized) {
-            await AppDataSource.initialize();
-        }
-
-        const event = await this.eventRepository.findOne({
-            where: { id: eventId },
-            select: ['id', 'title', 'attendanceToken', 'tokenExpiresAt']
-        });
-
-        if (!event) {
-            throw new Error('Event not found');
-        }
-
-        const now = new Date();
-        const isValid = event.tokenExpiresAt ? event.tokenExpiresAt > now : false;
-
-        return {
-            eventId: event.id,
-            eventTitle: event.title,
-            hasToken: !!event.attendanceToken,
-            token: event.attendanceToken,
-            expiresAt: event.tokenExpiresAt,
-            isValid,
-            timeRemaining: isValid && event.tokenExpiresAt
-                ? Math.max(0, event.tokenExpiresAt.getTime() - now.getTime())
-                : 0
-        };
     }
 }
 

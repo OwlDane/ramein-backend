@@ -16,9 +16,6 @@ export class Event {
     date: Date;
 
     @Column()
-    eventDate: Date; // The actual date of the event for attendance
-
-    @Column()
     time: string;
 
     @Column()
@@ -33,6 +30,12 @@ export class Event {
     @Column("text")
     description: string;
 
+    @Column({ nullable: true })
+    category: string;
+
+    @Column('decimal', { precision: 10, scale: 2, default: 0 })
+    price: number;
+
     @Column()
     createdBy: string;
 
@@ -41,23 +44,9 @@ export class Event {
 
 
 
-    @Column({ default: 0 })
-    maxParticipants: number; // 0 means unlimited
+    
 
-    @Column({ default: 0 })
-    currentParticipants: number;
-
-    @Column({ nullable: true })
-    attendanceToken: string;
-
-    @Column({ nullable: true })
-    tokenExpiresAt: Date;
-
-    @Column({ default: true })
-    allowRegistration: boolean; // Whether registration is still open
-
-    @Column({ nullable: true })
-    registrationDeadline: Date; // When registration closes
+    
 
     @CreateDateColumn()
     createdAt: Date;

@@ -31,7 +31,7 @@ export class ReportService {
         const [events, participants] = await Promise.all([
             this.eventRepository.find({
                 where: {
-                    eventDate: Between(startOfMonth(startDate), endOfMonth(endDate))
+                    date: Between(startOfMonth(startDate), endOfMonth(endDate))
                 },
                 relations: ['participants']
             }),
@@ -50,7 +50,7 @@ export class ReportService {
 
             // Filter events and participants for this month
             const monthEvents = events.filter(event => 
-                event.eventDate >= monthStart && event.eventDate <= monthEnd
+                event.date >= monthStart && event.date <= monthEnd
             );
 
             const monthParticipants = participants.filter(participant => 
@@ -72,7 +72,7 @@ export class ReportService {
                     id: event.id,
                     title: event.title,
                     participants: event.participants.length,
-                    date: event.eventDate
+                    date: event.date
                 }));
 
             return {
@@ -99,7 +99,7 @@ export class ReportService {
                 id: event.id,
                 title: event.title,
                 participants: event.participants.length,
-                date: event.eventDate
+                date: event.date
             }));
 
         return {
@@ -136,7 +136,7 @@ export class ReportService {
             .map(event => ({
                 id: event.id,
                 title: event.title,
-                date: event.eventDate,
+                date: event.date,
                 location: event.location,
                 totalParticipants: event.participants.length,
                 participants: event.participants.map(p => ({
@@ -198,7 +198,7 @@ export class ReportService {
             event: {
                 id: event.id,
                 title: event.title,
-                date: event.eventDate,
+                date: event.date,
                 location: event.location
             },
             statistics: {

@@ -29,14 +29,14 @@ async function setupDatabase() {
                 address: 'Admin Address',
                 education: 'S1',
                 role: UserRole.ADMIN,
-                isVerified: true
+                isOtpVerified: true
             });
 
             await userRepository.save(admin);
             console.log("Admin user created successfully");
         } else {
             // Update admin user to ensure it's verified
-            admin.isVerified = true;
+            admin.isOtpVerified = true;
             await userRepository.save(admin);
             console.log("Admin user updated and verified");
         }

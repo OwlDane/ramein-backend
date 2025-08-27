@@ -23,8 +23,8 @@ router.get('/protected-route', auth, requireVerification, (req, res) => {
     res.json({ 
         message: 'This is a protected route',
         user: {
-            id: req.user?.userId,
-            role: req.user?.role
+            id: (req.user as any)?.id,
+            role: (req.user as any)?.role
         }
     });
 });
@@ -33,7 +33,7 @@ router.get('/protected-route', auth, requireVerification, (req, res) => {
 router.get('/profile', auth, requireVerification, (req, res) => {
     res.json({ 
         message: 'User profile endpoint',
-        userId: req.user?.userId 
+        userId: (req.user as any)?.id 
     });
 });
 
