@@ -238,3 +238,75 @@
 {
   "service": "ramein-backend"
 }
+2025-08-27 20:53:01 [info]: GET /api/events?sort=nearest - 304 - 283ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 20:57:50 [info]: GET /api/events?sort=nearest - 304 - 146ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:01:34 [info]: GET /api/events/16838cc3-c53b-42e2-8c59-4ab88dfd0adc - 200 - 165ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:01:34 [info]: GET /api/events/16838cc3-c53b-42e2-8c59-4ab88dfd0adc - 304 - 33ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:01:41 [info]: GET /api/events?sort=nearest - 304 - 66ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:01:41 [info]: GET /api/events?sort=nearest - 304 - 53ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:07:50 [info]: GET /api/events?sort=nearest - 304 - 90ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:07:50 [info]: GET /api/events?sort=nearest - 304 - 27ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:07:51 [info]: GET /api/events?sort=nearest - 304 - 126ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:07:51 [info]: GET /api/events?sort=nearest - 304 - 39ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:10:07 [info]: GET /api/events?sort=nearest - 304 - 323ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:10:07 [info]: GET /api/events?sort=nearest - 304 - 44ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:11:53 [info]: GET /api/events?sort=nearest - 304 - 150ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:11:53 [info]: GET /api/events?sort=nearest - 304 - 38ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:27:37 [info]: GET /api/events/c54e429c-eda2-40e9-8fe6-a8cf84dea435 - 200 - 97ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:27:37 [info]: GET /api/events/c54e429c-eda2-40e9-8fe6-a8cf84dea435 - 304 - 45ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:27:43 [info]: GET /api/events?sort=nearest - 304 - 67ms
+{
+  "service": "ramein-backend"
+}
+2025-08-27 21:27:43 [info]: GET /api/events?sort=nearest - 304 - 36ms
+{
+  "service": "ramein-backend"
+}
