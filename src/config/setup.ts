@@ -1,5 +1,5 @@
 import AppDataSource from "../config/database";
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { User, UserRole } from "../entities/User";
 
 async function setupDatabase() {
@@ -29,6 +29,8 @@ async function setupDatabase() {
                 address: 'Admin Address',
                 education: 'S1',
                 role: UserRole.ADMIN,
+                isVerified: true,
+                isEmailVerified: true,
                 isOtpVerified: true
             });
 
@@ -36,6 +38,8 @@ async function setupDatabase() {
             console.log("Admin user created successfully");
         } else {
             // Update admin user to ensure it's verified
+            admin.isVerified = true;
+            admin.isEmailVerified = true;
             admin.isOtpVerified = true;
             await userRepository.save(admin);
             console.log("Admin user updated and verified");

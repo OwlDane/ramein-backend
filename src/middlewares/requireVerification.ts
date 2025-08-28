@@ -32,7 +32,7 @@ export const requireVerification = async (req: Request, res: Response, next: Nex
         }
 
         // Cek apakah email sudah diverifikasi
-        if (!user.isEmailVerified && !user.isOtpVerified) {
+        if (!user.isEmailVerified && !user.isVerified) {
             res.status(403).json({
                 message: 'Please verify your email first',
                 requiresVerification: true

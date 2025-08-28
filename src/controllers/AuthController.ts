@@ -4,21 +4,10 @@ import { User, UserRole } from '../entities/User'; // pastikan UserRole di-impor
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendResetPasswordEmail, sendOTPEmail } from '../services/emailService';
+import { generateOTP, isOTPExpired } from '../utils/otpGenerator';
 
 // Initialize database connection if not initialized
 const userRepository = AppDataSource.getRepository(User);
-
-// Helper function to generate OTP
-const generateOTP = (): string => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-// Helper function to check if OTP is expired (5 minutes)
-const isOTPExpired = (otpCreatedAt: Date): boolean => {
-    const now = new Date();
-    const diffInMinutes = (now.getTime() - otpCreatedAt.getTime()) / (1000 * 60);
-    return diffInMinutes > 5;
-};
 
 export class AuthController {
     // Register new user
@@ -31,7 +20,7 @@ export class AuthController {
                 return res.status(400).json({ message: 'Email sudah terdaftar' });
             }
 
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
             if (!passwordRegex.test(password)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -83,7 +72,7 @@ export class AuthController {
                 return res.status(400).json({ message: 'Token verifikasi tidak valid' });
             }
 
-            if (user.isOtpVerified) {
+            if (user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi sebelumnya' });
             }
 
@@ -93,12 +82,12 @@ export class AuthController {
             }
 
             // Mark email as verified
-            user.isOtpVerified = true;
+            user.isVerified = true;
+            user.isEmailVerified = true;
             user.verificationToken = null;
             user.tokenExpiry = null;
 
             await userRepository.save(user);
-
             return res.json({
                 message: 'Email berhasil diverifikasi. Silakan login.'
             });
@@ -123,7 +112,7 @@ export class AuthController {
             }
 
             // Check if already verified (using the existing field name)
-            if (user.isEmailVerified || user.isOtpVerified) {
+            if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
             }
 
@@ -158,7 +147,7 @@ export class AuthController {
             }
 
             // Check if already verified
-            if (user.isEmailVerified || user.isOtpVerified) {
+            if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
             }
 
@@ -172,7 +161,7 @@ export class AuthController {
 
             // Mark as verified and clear OTP data
             user.isEmailVerified = true;
-            user.isOtpVerified = true;
+            user.isVerified = true;
             user.otp = null;
             user.otpCreatedAt = null;
 
@@ -201,7 +190,7 @@ export class AuthController {
                 return res.status(404).json({ message: 'Email tidak ditemukan' });
             }
 
-            if (!user.isEmailVerified && !user.isOtpVerified) {
+            if (!user.isEmailVerified && !user.isVerified) {
                 return res.status(400).json({ message: 'Email belum diverifikasi' });
             }
 
@@ -248,7 +237,7 @@ export class AuthController {
             }
 
             // Validate new password
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
             if (!passwordRegex.test(newPassword)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -295,7 +284,7 @@ export class AuthController {
             }
 
             // Check if email is verified (either method)
-            if (!user.isEmailVerified && !user.isOtpVerified) {
+            if (!user.isEmailVerified && !user.isVerified) {
                 return res.status(403).json({ 
                     message: 'Silakan verifikasi email Anda terlebih dahulu',
                     requiresVerification: true 
@@ -349,7 +338,7 @@ export class AuthController {
             adminUser.education = education;
             adminUser.role = UserRole.ADMIN; // ✅ pakai enum
             adminUser.isEmailVerified = true; // Admin otomatis diverifikasi
-            adminUser.isOtpVerified = true; // Tambahkan ini juga
+            adminUser.isVerified = true; // Admin otomatis diverifikasi
 
             await userRepository.save(adminUser);
 

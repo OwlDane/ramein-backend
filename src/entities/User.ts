@@ -32,6 +32,12 @@ export class User {
     @Column({ name: "isVerified", default: false })
     isVerified: boolean;
 
+    @Column({ name: "isEmailVerified", default: false })
+    isEmailVerified: boolean;
+
+    @Column({ name: "isOtpVerified", default: false })
+    isOtpVerified: boolean;
+
     @Column({ name: "verificationToken", type: 'varchar', nullable: true })
     verificationToken: string | null;
 
@@ -43,6 +49,12 @@ export class User {
 
     @Column({ name: "resetTokenExpiry", type: 'timestamp', nullable: true })
     resetTokenExpiry: Date | null;
+
+    @Column({ name: "otp", type: 'varchar', nullable: true })
+    otp: string | null;
+
+    @Column({ name: "otpCreatedAt", type: 'timestamp', nullable: true })
+    otpCreatedAt: Date | null;
 
     @Column({
         type: "enum",
@@ -59,6 +71,4 @@ export class User {
 
     @OneToMany(() => Participant, participant => participant.user)
     participants: Participant[];
-
-    // Note: OTP columns are not present in current DB schema
 }
