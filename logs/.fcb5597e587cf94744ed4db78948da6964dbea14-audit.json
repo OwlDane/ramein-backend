@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "D:\\ujikom\\ramein\\ramein-backend\\logs\\.fcb5597e587cf94744ed4db78948da6964dbea14-audit.json",
+    "files": [
+        {
+            "date": 1756426148600,
+            "name": "D:\\ujikom\\ramein\\ramein-backend\\logs\\error-2025-08-29.log",
+            "hash": "5d94e1f128fd255ec232aa04792a4987a8de69c510bf37cf8a2d635e9efc7dd2"
+        }
+    ],
+    "hashType": "sha256"
+}

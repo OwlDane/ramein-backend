@@ -20,7 +20,7 @@ export class AuthController {
                 return res.status(400).json({ message: 'Email sudah terdaftar' });
             }
 
-            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&'#*+=\-])[A-Za-z\d@$!%?&'#*+=\-]{8,}$/;
             if (!passwordRegex.test(password)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -97,7 +97,7 @@ export class AuthController {
         }
     }
 
-    // NEW: Request OTP verification
+    // UPDATED: Request verification link (resend) during registration
     static async requestVerification(req: Request, res: Response) {
         try {
             const { email } = req.body;
@@ -111,9 +111,50 @@ export class AuthController {
                 return res.status(404).json({ message: 'User tidak ditemukan' });
             }
 
-            // Check if already verified (using the existing field name)
+            // Check if already verified
             if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
+            }
+
+            // Generate verification token and send link
+            const verificationToken = Math.random().toString(36).substring(2, 15);
+            const tokenExpiry = new Date();
+            tokenExpiry.setMinutes(tokenExpiry.getMinutes() + 5);
+
+            user.verificationToken = verificationToken;
+            user.tokenExpiry = tokenExpiry;
+            user.otp = null;
+            user.otpCreatedAt = null;
+
+            await userRepository.save(user);
+            await sendVerificationEmail(email, verificationToken);
+
+            return res.json({ 
+                message: 'Link verifikasi telah dikirim ke email Anda' 
+            });
+        } catch (error) {
+            console.error('Request verification error:', error);
+            return res.status(500).json({ message: 'Gagal mengirim link verifikasi' });
+        }
+    }
+
+    // NEW: Request OTP for login 2FA
+    static async requestLoginOTP(req: Request, res: Response) {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({ message: 'Email diperlukan' });
+            }
+
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+
+            // Check if email is verified (required for login)
+            if (!user.isEmailVerified && !user.isVerified) {
+                return res.status(400).json({ message: 'Email belum diverifikasi' });
             }
 
             const otp = generateOTP();
@@ -124,18 +165,18 @@ export class AuthController {
             await sendOTPEmail(email, otp);
 
             return res.json({ 
-                message: 'OTP telah dikirim ke email Anda' 
+                message: 'OTP telah dikirim ke email Anda untuk login' 
             });
         } catch (error) {
-            console.error('Request verification error:', error);
+            console.error('Request login OTP error:', error);
             return res.status(500).json({ message: 'Gagal mengirim OTP' });
         }
     }
 
-    // NEW: Verify OTP
+    // UPDATED: Verify OTP for both email verification and login completion
     static async verifyOTP(req: Request, res: Response) {
         try {
-            const { email, otp } = req.body;
+            const { email, otp, purpose } = req.body;
 
             if (!email || !otp) {
                 return res.status(400).json({ message: 'Email dan OTP diperlukan' });
@@ -146,11 +187,6 @@ export class AuthController {
                 return res.status(404).json({ message: 'User tidak ditemukan' });
             }
 
-            // Check if already verified
-            if (user.isEmailVerified || user.isVerified) {
-                return res.status(400).json({ message: 'Email sudah diverifikasi' });
-            }
-
             if (!user.otp || user.otp !== otp) {
                 return res.status(400).json({ message: 'OTP tidak valid' });
             }
@@ -159,17 +195,52 @@ export class AuthController {
                 return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
             }
 
-            // Mark as verified and clear OTP data
-            user.isEmailVerified = true;
-            user.isVerified = true;
+            // Clear OTP data
             user.otp = null;
             user.otpCreatedAt = null;
 
-            await userRepository.save(user);
+            // Handle different purposes
+            if (purpose === 'email_verification') {
+                // For email verification during registration
+                if (user.isEmailVerified || user.isVerified) {
+                    return res.status(400).json({ message: 'Email sudah diverifikasi' });
+                }
+                
+                // Mark as verified
+                user.isEmailVerified = true;
+                user.isVerified = true;
+                
+                await userRepository.save(user);
+                
+                return res.json({ 
+                    message: 'Email berhasil diverifikasi' 
+                });
+            } else {
+                // For login completion (2FA)
+                if (!user.isEmailVerified && !user.isVerified) {
+                    return res.status(400).json({ message: 'Email belum diverifikasi' });
+                }
 
-            return res.json({ 
-                message: 'Email berhasil diverifikasi' 
-            });
+                // Generate JWT token for successful login
+                const token = jwt.sign(
+                    { userId: user.id, role: user.role },
+                    process.env.JWT_SECRET || 'your-secret-key',
+                    { expiresIn: '1d' }
+                );
+
+                await userRepository.save(user);
+
+                return res.json({
+                    message: 'Login berhasil',
+                    token,
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role
+                    }
+                });
+            }
         } catch (error) {
             console.error('Verify OTP error:', error);
             return res.status(500).json({ message: 'Gagal memverifikasi OTP' });
@@ -237,7 +308,7 @@ export class AuthController {
             }
 
             // Validate new password
-            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&'#*+=\-])[A-Za-z\d@$!%?&'#*+=\-]{8,}$/;
             if (!passwordRegex.test(newPassword)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -263,7 +334,7 @@ export class AuthController {
         }
     }
 
-    // UPDATED: Login with verification check
+    // UPDATED: Login without OTP (no 2FA) — requires verified email
     static async login(req: Request, res: Response) {
         try {
             // Initialize database connection if not initialized
@@ -283,7 +354,7 @@ export class AuthController {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
 
-            // Check if email is verified (either method)
+            // Check if email is verified (required for login)
             if (!user.isEmailVerified && !user.isVerified) {
                 return res.status(403).json({ 
                     message: 'Silakan verifikasi email Anda terlebih dahulu',
@@ -296,13 +367,15 @@ export class AuthController {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
 
+            // Password is valid. Generate JWT and return directly
             const token = jwt.sign(
                 { userId: user.id, role: user.role },
                 process.env.JWT_SECRET || 'your-secret-key',
                 { expiresIn: '1d' }
             );
 
-            return res.json({
+            return res.status(200).json({
+                message: 'Login berhasil',
                 token,
                 user: {
                     id: user.id,

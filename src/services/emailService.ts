@@ -1,19 +1,75 @@
 import nodemailer from 'nodemailer';
 import { AppError } from './errorService';
+import { google } from 'googleapis';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+// Build transporter with either OAuth2 or basic SMTP based on env
+function createTransporter() {
+  const useOAuth2 = String(process.env.SMTP_USE_OAUTH2 || 'false').toLowerCase() === 'true';
+
+  if (useOAuth2) {
+    const clientId = process.env.SMTP_OAUTH_CLIENT_ID || '';
+    const clientSecret = process.env.SMTP_OAUTH_CLIENT_SECRET || '';
+    const refreshToken = process.env.SMTP_OAUTH_REFRESH_TOKEN || '';
+    const userEmail = process.env.SMTP_USER || process.env.EMAIL_USER || '';
+
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://developers.google.com/oauthplayground');
+    oauth2Client.setCredentials({ refresh_token: refreshToken });
+
+    return nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: userEmail,
+        clientId,
+        clientSecret,
+        refreshToken,
+        // accessToken will be fetched dynamically per send using getAccessToken
+      },
+    } as any);
+  }
+
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = Number(process.env.SMTP_PORT) || 587;
+  const basicUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+  const basicPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+
+  // If explicit SMTP host provided, use it.
+  if (smtpHost) {
+    return nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: false,
+      auth: basicUser && basicPass ? { user: basicUser, pass: basicPass } : undefined,
+    } as any);
+  }
+
+  // Simple mode: fall back to Gmail service using EMAIL_USER/EMAIL_PASS
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: basicUser,
+      pass: basicPass,
+    },
+  } as any);
+}
+
+const transporter = createTransporter();
+
+// Optional: verify transporter on startup
+(async () => {
+  try {
+    await transporter.verify();
+    // eslint-disable-next-line no-console
+    console.log('[mail] transporter verified (OAuth2:', String(process.env.SMTP_USE_OAUTH2 || 'false'), ')');
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[mail] transporter verify failed:', err);
+  }
+})();
 
 export const sendVerificationEmail = async (email: string, token: string) => {
   try {
-    const mailOptions = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: process.env.SMTP_USER,
       to: email,
       subject: 'Verifikasi Email Anda',
@@ -26,16 +82,18 @@ export const sendVerificationEmail = async (email: string, token: string) => {
         <p>Link ini akan kadaluarsa dalam 5 menit.</p>
       `,
     };
-
+    // For OAuth2, fetch an access token implicitly via nodemailer
     await transporter.sendMail(mailOptions);
   } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('SMTP error sendVerificationEmail:', error);
     throw new AppError('Gagal mengirim email verifikasi', 500);
   }
 };
 
 export const sendResetPasswordEmail = async (email: string, token: string) => {
   try {
-    const mailOptions = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: process.env.SMTP_USER,
       to: email,
       subject: 'Reset Password',
@@ -61,7 +119,7 @@ export const sendEventRegistrationEmail = async (
   tokenNumber: string
 ) => {
   try {
-    const mailOptions = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: process.env.SMTP_USER,
       to: email,
       subject: `Pendaftaran Event: ${eventTitle}`,
@@ -84,7 +142,7 @@ export const sendEventRegistrationEmail = async (
 // src/services/emailService.ts
 export const sendOTPEmail = async (email: string, otp: string) => {
   try {
-    const mailOptions = {
+    const mailOptions: nodemailer.SendMailOptions = {
       from: process.env.SMTP_USER,
       to: email,
       subject: 'Your Verification Code',
@@ -96,9 +154,14 @@ export const sendOTPEmail = async (email: string, otp: string) => {
         <p>If you didn't request this, please ignore this email.</p>
       `,
     };
-
     await transporter.sendMail(mailOptions);
+    if ((process.env.NODE_ENV || 'development') !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log('[mail][dev] OTP sent (fallback log):', email, otp);
+    }
   } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('SMTP error sendOTPEmail:', error);
     throw new AppError('Failed to send OTP email', 500);
   }
 };

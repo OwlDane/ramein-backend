@@ -44,16 +44,29 @@ class EventController {
     }
     static async getAll(req, res) {
         try {
-            const { search, sort } = req.query;
+            const { search, sort, category } = req.query;
             let query = eventRepository.createQueryBuilder('event');
             if (search) {
                 query = query.where('LOWER(event.title) LIKE LOWER(:search) OR LOWER(event.description) LIKE LOWER(:search)', { search: `%${search}%` });
             }
-            if (sort === 'nearest') {
-                query = query.orderBy('event.date', 'ASC');
+            if (category && String(category).toLowerCase() !== 'all') {
+                query = query.andWhere('LOWER(event.category) = LOWER(:category)', { category });
             }
-            else if (sort === 'furthest') {
-                query = query.orderBy('event.date', 'DESC');
+            switch (sort) {
+                case 'nearest':
+                    query = query.orderBy('event.date', 'ASC');
+                    break;
+                case 'furthest':
+                    query = query.orderBy('event.date', 'DESC');
+                    break;
+                case 'price-asc':
+                    query = query.orderBy('event.price', 'ASC');
+                    break;
+                case 'price-desc':
+                    query = query.orderBy('event.price', 'DESC');
+                    break;
+                default:
+                    query = query.orderBy('event.date', 'ASC');
             }
             query = query
                 .andWhere('event.isPublished = :isPublished', { isPublished: true })

@@ -42,15 +42,8 @@ const User_1 = require("../entities/User");
 const bcrypt = __importStar(require("bcryptjs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const emailService_1 = require("../services/emailService");
+const otpGenerator_1 = require("../utils/otpGenerator");
 const userRepository = database_1.default.getRepository(User_1.User);
-const generateOTP = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-};
-const isOTPExpired = (otpCreatedAt) => {
-    const now = new Date();
-    const diffInMinutes = (now.getTime() - otpCreatedAt.getTime()) / (1000 * 60);
-    return diffInMinutes > 5;
-};
 class AuthController {
     static async register(req, res) {
         try {
@@ -59,7 +52,7 @@ class AuthController {
             if (existingUser) {
                 return res.status(400).json({ message: 'Email sudah terdaftar' });
             }
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
             if (!passwordRegex.test(password)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -101,13 +94,14 @@ class AuthController {
             if (!user) {
                 return res.status(400).json({ message: 'Token verifikasi tidak valid' });
             }
-            if (user.isOtpVerified) {
+            if (user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi sebelumnya' });
             }
             if (user.tokenExpiry && new Date() > user.tokenExpiry) {
                 return res.status(400).json({ message: 'Token verifikasi sudah kadaluarsa' });
             }
-            user.isOtpVerified = true;
+            user.isVerified = true;
+            user.isEmailVerified = true;
             user.verificationToken = null;
             user.tokenExpiry = null;
             await userRepository.save(user);
@@ -130,10 +124,10 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({ message: 'User tidak ditemukan' });
             }
-            if (user.isEmailVerified || user.isOtpVerified) {
+            if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
             }
-            const otp = generateOTP();
+            const otp = (0, otpGenerator_1.generateOTP)();
             user.otp = otp;
             user.otpCreatedAt = new Date();
             await userRepository.save(user);
@@ -157,17 +151,17 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({ message: 'User tidak ditemukan' });
             }
-            if (user.isEmailVerified || user.isOtpVerified) {
+            if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
             }
             if (!user.otp || user.otp !== otp) {
                 return res.status(400).json({ message: 'OTP tidak valid' });
             }
-            if (!user.otpCreatedAt || isOTPExpired(user.otpCreatedAt)) {
+            if (!user.otpCreatedAt || (0, otpGenerator_1.isOTPExpired)(user.otpCreatedAt)) {
                 return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
             }
             user.isEmailVerified = true;
-            user.isOtpVerified = true;
+            user.isVerified = true;
             user.otp = null;
             user.otpCreatedAt = null;
             await userRepository.save(user);
@@ -190,7 +184,7 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({ message: 'Email tidak ditemukan' });
             }
-            if (!user.isEmailVerified && !user.isOtpVerified) {
+            if (!user.isEmailVerified && !user.isVerified) {
                 return res.status(400).json({ message: 'Email belum diverifikasi' });
             }
             const resetToken = Math.random().toString(36).substring(2, 15);
@@ -224,7 +218,7 @@ class AuthController {
             if (user.resetTokenExpiry && new Date() > user.resetTokenExpiry) {
                 return res.status(400).json({ message: 'Token reset password sudah kadaluarsa' });
             }
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
             if (!passwordRegex.test(newPassword)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -258,7 +252,7 @@ class AuthController {
             if (!user) {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
-            if (!user.isEmailVerified && !user.isOtpVerified) {
+            if (!user.isEmailVerified && !user.isVerified) {
                 return res.status(403).json({
                     message: 'Silakan verifikasi email Anda terlebih dahulu',
                     requiresVerification: true
@@ -301,7 +295,7 @@ class AuthController {
             adminUser.education = education;
             adminUser.role = User_1.UserRole.ADMIN;
             adminUser.isEmailVerified = true;
-            adminUser.isOtpVerified = true;
+            adminUser.isVerified = true;
             await userRepository.save(adminUser);
             return res.status(201).json({
                 message: 'Admin berhasil dibuat',

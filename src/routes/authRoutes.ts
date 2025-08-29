@@ -8,10 +8,11 @@ const router = Router();
 
 // Public routes
 router.post('/register', AuthController.register);
-router.post('/login', AuthController.login);
-router.post('/verify-email', AuthController.verifyEmail);
-router.post('/request-verification', AuthController.requestVerification); // ✅ Added OTP request
-router.post('/verify-otp', AuthController.verifyOTP); // ✅ Added OTP verification
+router.post('/login', AuthController.login); // Direct login after verified
+// Removed login OTP endpoints as login 2FA is disabled
+// router.post('/request-login-otp', AuthController.requestLoginOTP);
+// router.post('/verify-otp', AuthController.verifyOTP);
+router.post('/request-verification', AuthController.requestVerification); // For email verification during registration
 router.post('/request-reset-password', AuthController.requestPasswordReset);
 router.post('/reset-password', AuthController.resetPassword);
 

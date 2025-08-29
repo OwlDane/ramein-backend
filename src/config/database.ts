@@ -21,7 +21,7 @@ const databaseConfig: DataSourceOptions = {
         rejectUnauthorized: false
     },
     entities: [User, Event, Participant, KategoriKegiatan, EventPackage, Certificate],
-    synchronize: false, // Disable synchronize to prevent conflicts with existing tables
+    synchronize: false, // Disable synchronize to prevent conflicts with existing data
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],
     subscribers: [],
