@@ -78,7 +78,7 @@ Dengan sistem ini, penyelenggara dapat mengatur event, memverifikasi peserta, me
 ### Installation
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/OwlDane/ramein-backend.git
 cd ramein-backend
 
 # Install dependencies
