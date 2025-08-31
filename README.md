@@ -1,13 +1,5 @@
 # 🚀 Ramein Event Management System - Backend
 
-![Build](https://img.shields.io/github/actions/workflow/status/OwlDane/ramein-backend/ci.yml?branch=main&logo=github&style=for-the-badge)  
-![License](https://img.shields.io/github/license/OwlDane/ramein-backend?style=for-the-badge&logo=opensourceinitiative&logoColor=white)  
-![Issues](https://img.shields.io/github/issues/OwlDane/ramein-backend?style=for-the-badge&logo=github)  
-![Stars](https://img.shields.io/github/stars/OwlDane/ramein-backend?style=for-the-badge&logo=github&color=yellow)  
-![Contributors](https://img.shields.io/github/contributors/OwlDane/ramein-backend?style=for-the-badge&logo=github)  
-
----
-
 ## 🛠️ Tech Stack
 
 ![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js&logoColor=white)  
