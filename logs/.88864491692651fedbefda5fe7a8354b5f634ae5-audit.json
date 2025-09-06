@@ -1,0 +1,25 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/.88864491692651fedbefda5fe7a8354b5f634ae5-audit.json",
+    "files": [
+        {
+            "date": 1756994857764,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-04.log",
+            "hash": "a6de0dabf332a4ed139c680cdbcea2e45d11a7dc92ab72233f73ba9385ca6526"
+        },
+        {
+            "date": 1757066455081,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-05.log",
+            "hash": "25ef69b735557d1af6343d4d2d06c18d18c26ef0928a46dc65b4e1bf94b267e8"
+        },
+        {
+            "date": 1757171308951,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-06.log",
+            "hash": "7b7ce606a8bb3eca110928c97ccebd3a6eec4c18a6986e1120d7443a1c98713d"
+        }
+    ],
+    "hashType": "sha256"
+}

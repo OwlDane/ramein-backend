@@ -6,15 +6,57 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendOTPEmail = exports.sendEventRegistrationEmail = exports.sendResetPasswordEmail = exports.sendVerificationEmail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const errorService_1 = require("./errorService");
-const transporter = nodemailer_1.default.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
+const googleapis_1 = require("googleapis");
+function createTransporter() {
+    const useOAuth2 = String(process.env.SMTP_USE_OAUTH2 || 'false').toLowerCase() === 'true';
+    if (useOAuth2) {
+        const clientId = process.env.SMTP_OAUTH_CLIENT_ID || '';
+        const clientSecret = process.env.SMTP_OAUTH_CLIENT_SECRET || '';
+        const refreshToken = process.env.SMTP_OAUTH_REFRESH_TOKEN || '';
+        const userEmail = process.env.SMTP_USER || process.env.EMAIL_USER || '';
+        const oauth2Client = new googleapis_1.google.auth.OAuth2(clientId, clientSecret, 'https://developers.google.com/oauthplayground');
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        return nodemailer_1.default.createTransport({
+            service: 'gmail',
+            auth: {
+                type: 'OAuth2',
+                user: userEmail,
+                clientId,
+                clientSecret,
+                refreshToken,
+            },
+        });
+    }
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = Number(process.env.SMTP_PORT) || 587;
+    const basicUser = process.env.SMTP_USER || process.env.EMAIL_USER;
+    const basicPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
+    if (smtpHost) {
+        return nodemailer_1.default.createTransport({
+            host: smtpHost,
+            port: smtpPort,
+            secure: false,
+            auth: basicUser && basicPass ? { user: basicUser, pass: basicPass } : undefined,
+        });
+    }
+    return nodemailer_1.default.createTransport({
+        service: 'gmail',
+        auth: {
+            user: basicUser,
+            pass: basicPass,
+        },
+    });
+}
+const transporter = createTransporter();
+(async () => {
+    try {
+        await transporter.verify();
+        console.log('[mail] transporter verified (OAuth2:', String(process.env.SMTP_USE_OAUTH2 || 'false'), ')');
+    }
+    catch (err) {
+        console.error('[mail] transporter verify failed:', err);
+    }
+})();
 const sendVerificationEmail = async (email, token) => {
     try {
         const mailOptions = {
@@ -33,6 +75,7 @@ const sendVerificationEmail = async (email, token) => {
         await transporter.sendMail(mailOptions);
     }
     catch (error) {
+        console.error('SMTP error sendVerificationEmail:', error);
         throw new errorService_1.AppError('Gagal mengirim email verifikasi', 500);
     }
 };
@@ -95,8 +138,12 @@ const sendOTPEmail = async (email, otp) => {
       `,
         };
         await transporter.sendMail(mailOptions);
+        if ((process.env.NODE_ENV || 'development') !== 'production') {
+            console.log('[mail][dev] OTP sent (fallback log):', email, otp);
+        }
     }
     catch (error) {
+        console.error('SMTP error sendOTPEmail:', error);
         throw new errorService_1.AppError('Failed to send OTP email', 500);
     }
 };

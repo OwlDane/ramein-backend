@@ -390,6 +390,21 @@ export class AuthController {
         }
     }
 
+    // Logout user
+    static async logout(_req: Request, res: Response) {
+        try {
+            // Since we're using JWT tokens, logout is handled client-side
+            // by removing the token from storage. This endpoint can be used
+            // for any server-side cleanup if needed in the future.
+            return res.json({
+                message: 'Logout berhasil'
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat logout' });
+        }
+    }
+
     // Create Admin
     static async createAdmin(req: Request, res: Response) {
         try {

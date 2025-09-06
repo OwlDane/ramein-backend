@@ -1,0 +1,444 @@
+2025-09-06 22:09:37 [info]: GET /api/events?sort=nearest&limit=6 - 200 - 97ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:09:38 [info]: GET /api/events?sort=nearest - 200 - 326ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: POST /api/auth/login - 200 - 114ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: GET /api/auth/profile - 200 - 54ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: GET /api/events?sort=nearest - 304 - 46ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 27ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:06 [info]: GET /api/events?sort=nearest - 304 - 36ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:16 [info]: GET /api/events?sort=nearest - 304 - 50ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:16 [info]: GET /api/events?sort=nearest - 304 - 44ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:22 [info]: GET /api/events/c54e429c-eda2-40e9-8fe6-a8cf84dea435 - 200 - 87ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:22 [info]: GET /api/events/c54e429c-eda2-40e9-8fe6-a8cf84dea435 - 304 - 50ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:10:26 [info]: POST /api/participants/register - 401 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:17 [info]: GET /api/participants/my-events - 500 - 98ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:17 [info]: GET /api/participants/my-events - 500 - 46ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:32 [info]: POST /api/auth/logout - 404 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:36 [info]: GET /api/events?sort=nearest - 304 - 126ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:36 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 136ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:36 [info]: GET /api/events?sort=nearest - 304 - 31ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:11:36 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 33ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:14 [info]: GET /api/events?sort=nearest - 304 - 48ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:15 [info]: GET /api/events?sort=nearest - 304 - 26ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:27 [info]: GET /api/events?sort=nearest&category=Technology - 200 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:34 [info]: GET /api/events?sort=nearest - 304 - 28ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:39 [info]: GET /api/events?sort=nearest - 304 - 42ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:55 [info]: GET /api/events/c2e6277a-00d1-4121-ac20-0825a107e03e - 200 - 74ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:15:55 [info]: GET /api/events/c2e6277a-00d1-4121-ac20-0825a107e03e - 304 - 59ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:23 [info]: POST /api/auth/login - 200 - 89ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:23 [info]: GET /api/auth/profile - 304 - 41ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:24 [info]: GET /api/events?sort=nearest - 304 - 44ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:24 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 45ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:24 [info]: GET /api/events?sort=nearest - 304 - 26ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:24 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 33ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:37 [info]: GET /api/participants/my-events - 500 - 46ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:37 [info]: GET /api/participants/my-events - 500 - 47ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:38 [info]: GET /api/participants/my-events - 500 - 49ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:38 [info]: GET /api/participants/my-events - 500 - 52ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:41 [info]: GET /api/participants/my-events - 500 - 81ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:41 [info]: GET /api/participants/my-events - 500 - 85ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:16:52 [info]: POST /api/auth/logout - 404 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:07 [info]: GET /api/events?sort=nearest - 304 - 47ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:07 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 50ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:07 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 25ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:07 [info]: GET /api/events?sort=nearest - 304 - 27ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:13 [info]: POST /api/auth/request-verification - 404 - 24ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:27 [info]: POST /api/auth/request-verification - 400 - 40ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:32 [info]: GET /api/events?sort=nearest - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:32 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 46ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:32 [info]: GET /api/events?sort=nearest - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:32 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 27ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: POST /api/auth/login - 200 - 81ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: GET /api/auth/profile - 304 - 47ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: GET /api/events?sort=nearest - 304 - 40ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:17:53 [info]: GET /api/events?sort=nearest - 304 - 24ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:07 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 75ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:07 [info]: GET /api/events?sort=nearest - 304 - 79ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:07 [info]: GET /api/events?sort=nearest - 304 - 28ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:07 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 36ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:56 [info]: POST /api/auth/logout - 404 - 3ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:58 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 25ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:58 [info]: GET /api/events?sort=nearest - 304 - 46ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:58 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 32ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:18:58 [info]: GET /api/events?sort=nearest - 304 - 30ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:19:06 [info]: GET /api/events?sort=nearest - 304 - 55ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:19:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 62ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:19:06 [info]: GET /api/events?sort=nearest - 304 - 26ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:19:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 28ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:47:22 [info]: POST /api/auth/login - 401 - 270ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:47:26 [info]: POST /api/auth/login - 401 - 257ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:47:32 [info]: POST /api/auth/login - 401 - 255ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:47:38 [info]: POST /api/auth/login - 401 - 256ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:47:40 [info]: POST /api/auth/login - 401 - 254ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:58:48 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 82ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 22:58:48 [info]: GET /api/events?sort=nearest - 304 - 382ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: POST /api/auth/login - 200 - 266ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: GET /api/auth/profile - 200 - 52ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: GET /api/events?sort=nearest - 304 - 26ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 48ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: GET /api/events?sort=nearest - 304 - 23ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:06 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 28ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:14 [info]: GET /api/participants/my-events - 500 - 115ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:14 [info]: GET /api/participants/my-events - 500 - 128ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:15 [info]: GET /api/participants/my-events - 500 - 58ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:00:15 [info]: GET /api/participants/my-events - 500 - 63ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:29:01 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 71ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:29:01 [info]: GET /api/events?sort=nearest - 304 - 326ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:29:01 [info]: GET /api/auth/profile - 304 - 369ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:29:43 [info]: POST /api/auth/logout - 404 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:30:12 [info]: GET /api/events?sort=nearest - 304 - 367ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:30:12 [info]: GET /api/events?sort=nearest - 304 - 35ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:30:33 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:30:40 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:30:43 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:31:09 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:31:12 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:31:43 [info]: GET /api/health - 200 - 6ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:31:47 [info]: GET /api/health - 200 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:31:54 [info]: POST /api/auth/logout - 200 - 1ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:32:04 [info]: POST /api/auth/verify-otp - 404 - 32ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:32:15 [info]: Received SIGTERM. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:32:54 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 54ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:32:55 [info]: GET /api/events?sort=nearest - 304 - 342ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:02 [info]: POST /api/auth/login - 200 - 91ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:03 [info]: GET /api/auth/profile - 200 - 49ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:03 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 40ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:03 [info]: GET /api/events?sort=nearest - 304 - 50ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:03 [info]: GET /api/events?sort=nearest&limit=6 - 304 - 27ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:03 [info]: GET /api/events?sort=nearest - 304 - 24ms
+{
+  "service": "ramein-backend"
+}
+2025-09-06 23:33:05 [info]: POST /api/auth/logout - 200 - 1ms
+{
+  "service": "ramein-backend"
+}

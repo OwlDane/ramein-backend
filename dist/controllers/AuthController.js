@@ -52,7 +52,7 @@ class AuthController {
             if (existingUser) {
                 return res.status(400).json({ message: 'Email sudah terdaftar' });
             }
-            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&'#*+=\-])[A-Za-z\d@$!%?&'#*+=\-]{8,}$/;
             if (!passwordRegex.test(password)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -127,23 +127,54 @@ class AuthController {
             if (user.isEmailVerified || user.isVerified) {
                 return res.status(400).json({ message: 'Email sudah diverifikasi' });
             }
+            const verificationToken = Math.random().toString(36).substring(2, 15);
+            const tokenExpiry = new Date();
+            tokenExpiry.setMinutes(tokenExpiry.getMinutes() + 5);
+            user.verificationToken = verificationToken;
+            user.tokenExpiry = tokenExpiry;
+            user.otp = null;
+            user.otpCreatedAt = null;
+            await userRepository.save(user);
+            await (0, emailService_1.sendVerificationEmail)(email, verificationToken);
+            return res.json({
+                message: 'Link verifikasi telah dikirim ke email Anda'
+            });
+        }
+        catch (error) {
+            console.error('Request verification error:', error);
+            return res.status(500).json({ message: 'Gagal mengirim link verifikasi' });
+        }
+    }
+    static async requestLoginOTP(req, res) {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                return res.status(400).json({ message: 'Email diperlukan' });
+            }
+            const user = await userRepository.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+            if (!user.isEmailVerified && !user.isVerified) {
+                return res.status(400).json({ message: 'Email belum diverifikasi' });
+            }
             const otp = (0, otpGenerator_1.generateOTP)();
             user.otp = otp;
             user.otpCreatedAt = new Date();
             await userRepository.save(user);
             await (0, emailService_1.sendOTPEmail)(email, otp);
             return res.json({
-                message: 'OTP telah dikirim ke email Anda'
+                message: 'OTP telah dikirim ke email Anda untuk login'
             });
         }
         catch (error) {
-            console.error('Request verification error:', error);
+            console.error('Request login OTP error:', error);
             return res.status(500).json({ message: 'Gagal mengirim OTP' });
         }
     }
     static async verifyOTP(req, res) {
         try {
-            const { email, otp } = req.body;
+            const { email, otp, purpose } = req.body;
             if (!email || !otp) {
                 return res.status(400).json({ message: 'Email dan OTP diperlukan' });
             }
@@ -151,23 +182,42 @@ class AuthController {
             if (!user) {
                 return res.status(404).json({ message: 'User tidak ditemukan' });
             }
-            if (user.isEmailVerified || user.isVerified) {
-                return res.status(400).json({ message: 'Email sudah diverifikasi' });
-            }
             if (!user.otp || user.otp !== otp) {
                 return res.status(400).json({ message: 'OTP tidak valid' });
             }
             if (!user.otpCreatedAt || (0, otpGenerator_1.isOTPExpired)(user.otpCreatedAt)) {
                 return res.status(400).json({ message: 'OTP sudah kadaluarsa' });
             }
-            user.isEmailVerified = true;
-            user.isVerified = true;
             user.otp = null;
             user.otpCreatedAt = null;
-            await userRepository.save(user);
-            return res.json({
-                message: 'Email berhasil diverifikasi'
-            });
+            if (purpose === 'email_verification') {
+                if (user.isEmailVerified || user.isVerified) {
+                    return res.status(400).json({ message: 'Email sudah diverifikasi' });
+                }
+                user.isEmailVerified = true;
+                user.isVerified = true;
+                await userRepository.save(user);
+                return res.json({
+                    message: 'Email berhasil diverifikasi'
+                });
+            }
+            else {
+                if (!user.isEmailVerified && !user.isVerified) {
+                    return res.status(400).json({ message: 'Email belum diverifikasi' });
+                }
+                const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+                await userRepository.save(user);
+                return res.json({
+                    message: 'Login berhasil',
+                    token,
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        name: user.name,
+                        role: user.role
+                    }
+                });
+            }
         }
         catch (error) {
             console.error('Verify OTP error:', error);
@@ -218,7 +268,7 @@ class AuthController {
             if (user.resetTokenExpiry && new Date() > user.resetTokenExpiry) {
                 return res.status(400).json({ message: 'Token reset password sudah kadaluarsa' });
             }
-            const passwordRegex = /^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%?&])[A-Za-z\d@$!%?&]{8,}$/;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&'#*+=\-])[A-Za-z\d@$!%?&'#*+=\-]{8,}$/;
             if (!passwordRegex.test(newPassword)) {
                 return res.status(400).json({
                     message: 'Password harus minimal 8 karakter dan mengandung huruf besar, huruf kecil, angka, dan karakter spesial'
@@ -263,7 +313,8 @@ class AuthController {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
             const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
-            return res.json({
+            return res.status(200).json({
+                message: 'Login berhasil',
                 token,
                 user: {
                     id: user.id,
@@ -276,6 +327,17 @@ class AuthController {
         catch (error) {
             console.error('Login error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat login' });
+        }
+    }
+    static async logout(_req, res) {
+        try {
+            return res.json({
+                message: 'Logout berhasil'
+            });
+        }
+        catch (error) {
+            console.error('Logout error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat logout' });
         }
     }
     static async createAdmin(req, res) {
