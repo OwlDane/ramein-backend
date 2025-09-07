@@ -43,7 +43,12 @@ class ParticipantController {
             participant.eventId = eventId;
             participant.tokenNumber = tokenNumber;
             await participantRepository.save(participant);
-            await (0, emailService_1.sendEventRegistrationEmail)(req.user.email, event.title, tokenNumber);
+            try {
+                await (0, emailService_1.sendEventRegistrationEmail)(req.user.email, event.title, tokenNumber);
+            }
+            catch (emailError) {
+                console.error('Failed to send registration email:', emailError);
+            }
             return res.status(201).json({
                 message: 'Berhasil mendaftar event. Silakan cek email Anda untuk token kehadiran.',
                 participant

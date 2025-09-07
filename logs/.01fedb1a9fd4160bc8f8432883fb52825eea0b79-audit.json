@@ -19,6 +19,11 @@
             "date": 1757171308950,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-06.log",
             "hash": "993b0bda86f932809a14836ac4ae2c5f71d6e08e64e9224ff48fb8bdb31c778f"
+        },
+        {
+            "date": 1757241187240,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-07.log",
+            "hash": "2fb9dcdfe62e95e2af7cc2a3282ece79e098762007f5900f10167c48042b91b5"
         }
     ],
     "hashType": "sha256"

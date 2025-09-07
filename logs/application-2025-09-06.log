@@ -442,3 +442,7 @@
 {
   "service": "ramein-backend"
 }
+2025-09-06 23:44:09 [info]: Received SIGINT. Starting graceful shutdown...
+{
+  "service": "ramein-backend"
+}
