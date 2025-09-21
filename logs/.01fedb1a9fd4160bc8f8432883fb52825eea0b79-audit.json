@@ -6,24 +6,19 @@
     "auditLog": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/.01fedb1a9fd4160bc8f8432883fb52825eea0b79-audit.json",
     "files": [
         {
-            "date": 1756994857764,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-04.log",
-            "hash": "f03ec11e6fac90dd1a1073e2bb7926de1e562a11f0209377a28722e4c663e166"
-        },
-        {
-            "date": 1757066455078,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-05.log",
-            "hash": "d578acdbc7a8ddd00d67432de912f2214489471fdc40ae3a46313af91cb9780f"
-        },
-        {
-            "date": 1757171308950,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-06.log",
-            "hash": "993b0bda86f932809a14836ac4ae2c5f71d6e08e64e9224ff48fb8bdb31c778f"
-        },
-        {
             "date": 1757241187240,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-07.log",
             "hash": "2fb9dcdfe62e95e2af7cc2a3282ece79e098762007f5900f10167c48042b91b5"
+        },
+        {
+            "date": 1757635465515,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-12.log",
+            "hash": "a616945385b1fdbf3e50a318ad6c80c0b2599dc8e2f97079d905878cb6652105"
+        },
+        {
+            "date": 1758439172301,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-09-21.log",
+            "hash": "97943ccd5192bdf0234ad9b8a67ce1499f5b35d4881054afdb4bfb328be5f60d"
         }
     ],
     "hashType": "sha256"

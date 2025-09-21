@@ -1,23 +1,21 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import AppDataSource from '../config/database';
 import { Event } from '../entities/Event';
 import { Participant } from '../entities/Participant';
 import { User } from '../entities/User';
-import { AuthRequest } from '../middlewares/auth';
-import ExportService from '../services/exportService'; // ✅ Correct now
+import { KategoriKegiatan } from '../entities/KategoriKegiatan';
+import ExportService from '../services/exportService';
+import logger from '../utils/logger';
 
 const eventRepository = AppDataSource.getRepository(Event);
 const participantRepository = AppDataSource.getRepository(Participant);
 const userRepository = AppDataSource.getRepository(User);
+const categoryRepository = AppDataSource.getRepository(KategoriKegiatan);
 
 export class AdminController {
     // Get comprehensive dashboard statistics
-    static async getDashboardStats(req: AuthRequest, res: Response) {
+    static async getDashboardStats(_req: Request, res: Response) {
         try {
-            // Check if user is admin
-            if (req.user.role !== 'ADMIN') {
-                return res.status(403).json({ message: 'Hanya admin yang dapat mengakses dashboard' });
-            }
 
             const currentYear = new Date().getFullYear();
             const startOfYear = new Date(currentYear, 0, 1);
@@ -108,13 +106,8 @@ export class AdminController {
     }
 
     // Export dashboard data to Excel
-    static async exportDashboardData(req: AuthRequest, res: Response): Promise<void> {
+    static async exportDashboardData(req: Request, res: Response): Promise<void> {
         try {
-            // Check if user is admin
-            if (req.user.role !== 'ADMIN') {
-                res.status(403).json({ message: 'Unauthorized' });
-                return;
-            }
     
             const { format = 'xlsx' } = req.query;
             const currentYear = new Date().getFullYear();
@@ -156,12 +149,8 @@ export class AdminController {
     }
 
     // Get user management data
-    static async getUserManagement(req: AuthRequest, res: Response) {
+    static async getUserManagement(req: Request, res: Response) {
         try {
-            // Check if user is admin
-            if (req.user.role !== 'ADMIN') {
-                return res.status(403).json({ message: 'Unauthorized' });
-            }
 
             const { page = 1, limit = 10, search = '', role = '' } = req.query;
             const skip = (Number(page) - 1) * Number(limit);
@@ -207,12 +196,8 @@ export class AdminController {
     }
 
     // Update user role
-    static async updateUserRole(req: AuthRequest, res: Response) {
+    static async updateUserRole(req: Request, res: Response) {
         try {
-            // Check if user is admin
-            if (req.user.role !== 'ADMIN') {
-                return res.status(403).json({ message: 'Unauthorized' });
-            }
 
             const { userId } = req.params;
             const { role } = req.body;
@@ -230,7 +215,7 @@ export class AdminController {
             }
 
             // Prevent admin from changing their own role
-            if (userId === req.user.id) {
+            if (userId === req.adminUser.id) {
                 return res.status(400).json({ message: 'Tidak dapat mengubah role sendiri' });
             }
 
@@ -249,6 +234,428 @@ export class AdminController {
         } catch (error) {
             console.error('Update user role error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengupdate role user' });
+        }
+    }
+
+    // Create new event with H-3 validation
+    static async createEvent(req: Request, res: Response): Promise<void> {
+        try {
+            const { 
+                title, 
+                description, 
+                date, 
+                time, 
+                location, 
+                flyerUrl, 
+                certificateUrl, 
+                categoryId 
+            } = req.body;
+
+            // Validate required fields
+            if (!title || !description || !date || !time || !location || !categoryId) {
+                res.status(400).json({ 
+                    message: 'Semua field wajib diisi' 
+                });
+                return;
+            }
+
+            // Validate H-3 rule (event can only be created max 3 days before event date)
+            const eventDate = new Date(date);
+            const today = new Date();
+            const threeDaysFromNow = new Date(today);
+            threeDaysFromNow.setDate(today.getDate() + 3);
+
+            if (eventDate < threeDaysFromNow) {
+                res.status(400).json({ 
+                    message: 'Kegiatan hanya bisa dibuat maksimal H-3 dari tanggal pelaksanaan' 
+                });
+                return;
+            }
+
+            // Check if category exists
+            const category = await categoryRepository.findOne({
+                where: { id: categoryId }
+            });
+
+            if (!category) {
+                res.status(400).json({ 
+                    message: 'Kategori kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            // Create event
+            const event = eventRepository.create({
+                title,
+                description,
+                date: eventDate,
+                time,
+                location,
+                flyer: flyerUrl || '',
+                certificate: certificateUrl || null,
+                category: category.nama_kategori,
+                createdBy: req.adminUser?.id
+            });
+
+            const savedEvent = await eventRepository.save(event);
+
+            logger.info(`Admin ${req.adminUser?.email} created event: ${savedEvent.title}`);
+
+            res.status(201).json({
+                message: 'Kegiatan berhasil dibuat',
+                event: {
+                    id: savedEvent.id,
+                    title: savedEvent.title,
+                    description: savedEvent.description,
+                    date: savedEvent.date,
+                    time: savedEvent.time,
+                    location: savedEvent.location,
+                    flyerUrl: savedEvent.flyer,
+                    certificateUrl: savedEvent.certificate,
+                    category: {
+                        id: category.id,
+                        name: category.nama_kategori
+                    }
+                }
+            });
+
+        } catch (error) {
+            logger.error('Create event error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat membuat kegiatan' 
+            });
+        }
+    }
+
+    // Get all events for admin
+    static async getEvents(req: Request, res: Response) {
+        try {
+            const { page = 1, limit = 10, search = '', categoryId = '' } = req.query;
+            const skip = (Number(page) - 1) * Number(limit);
+
+            let query = eventRepository.createQueryBuilder('event')
+                .leftJoinAndSelect('event.participants', 'participants');
+
+            // Apply search filter
+            if (search) {
+                query = query.where(
+                    'LOWER(event.title) LIKE LOWER(:search) OR LOWER(event.description) LIKE LOWER(:search)',
+                    { search: `%${search}%` }
+                );
+            }
+
+            // Apply category filter
+            if (categoryId) {
+                query = query.andWhere('event.category = :categoryId', { categoryId });
+            }
+
+            // Get total count
+            const total = await query.getCount();
+
+            // Get paginated results
+            const events = await query
+                .skip(skip)
+                .take(Number(limit))
+                .orderBy('event.date', 'ASC')
+                .getMany();
+
+            // Add participant count to each event
+            const eventsWithStats = events.map(event => ({
+                ...event,
+                participantCount: event.participants?.length || 0,
+                attendanceCount: event.participants?.filter(p => p.hasAttended).length || 0
+            }));
+
+            res.json({
+                events: eventsWithStats,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    totalPages: Math.ceil(total / Number(limit))
+                }
+            });
+
+        } catch (error) {
+            logger.error('Get events error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat mengambil data kegiatan' 
+            });
+        }
+    }
+
+    // Get event by ID
+    static async getEventById(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            const event = await eventRepository.findOne({
+                where: { id },
+                relations: ['participants', 'participants.user']
+            });
+
+            if (!event) {
+                res.status(404).json({ 
+                    message: 'Kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            res.json({
+                event: {
+                    ...event,
+                    participantCount: event.participants?.length || 0,
+                    attendanceCount: event.participants?.filter(p => p.hasAttended).length || 0
+                }
+            });
+
+        } catch (error) {
+            logger.error('Get event by ID error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat mengambil data kegiatan' 
+            });
+        }
+    }
+
+    // Update event
+    static async updateEvent(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const { 
+                title, 
+                description, 
+                date, 
+                time, 
+                location, 
+                flyerUrl, 
+                certificateUrl, 
+                categoryId 
+            } = req.body;
+
+            const event = await eventRepository.findOne({
+                where: { id }
+            });
+
+            if (!event) {
+                res.status(404).json({ 
+                    message: 'Kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            // Validate H-3 rule for date changes
+            if (date) {
+                const eventDate = new Date(date);
+                const today = new Date();
+                const threeDaysFromNow = new Date(today);
+                threeDaysFromNow.setDate(today.getDate() + 3);
+
+                if (eventDate < threeDaysFromNow) {
+                    res.status(400).json({ 
+                        message: 'Tanggal kegiatan hanya bisa diubah maksimal H-3 dari tanggal pelaksanaan' 
+                    });
+                    return;
+                }
+            }
+
+            // Update event fields
+            if (title) event.title = title;
+            if (description) event.description = description;
+            if (date) event.date = new Date(date);
+            if (time) event.time = time;
+            if (location) event.location = location;
+            if (flyerUrl !== undefined) event.flyer = flyerUrl;
+            if (certificateUrl !== undefined) event.certificate = certificateUrl;
+
+            // Update category if provided
+            if (categoryId) {
+                const category = await categoryRepository.findOne({
+                    where: { id: categoryId }
+                });
+
+                if (!category) {
+                    res.status(400).json({ 
+                        message: 'Kategori kegiatan tidak ditemukan' 
+                    });
+                    return;
+                }
+
+                event.category = category.nama_kategori;
+            }
+
+            const updatedEvent = await eventRepository.save(event);
+
+            logger.info(`Admin ${req.adminUser?.email} updated event: ${updatedEvent.title}`);
+
+            res.json({
+                message: 'Kegiatan berhasil diupdate',
+                event: updatedEvent
+            });
+
+        } catch (error) {
+            logger.error('Update event error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat mengupdate kegiatan' 
+            });
+        }
+    }
+
+    // Delete event
+    static async deleteEvent(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            const event = await eventRepository.findOne({
+                where: { id },
+                relations: ['participants']
+            });
+
+            if (!event) {
+                res.status(404).json({ 
+                    message: 'Kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            // Check if event has participants
+            if (event.participants && event.participants.length > 0) {
+                res.status(400).json({ 
+                    message: 'Tidak dapat menghapus kegiatan yang sudah memiliki peserta' 
+                });
+                return;
+            }
+
+            await eventRepository.remove(event);
+
+            logger.info(`Admin ${req.adminUser?.email} deleted event: ${event.title}`);
+
+            res.json({
+                message: 'Kegiatan berhasil dihapus'
+            });
+
+        } catch (error) {
+            logger.error('Delete event error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat menghapus kegiatan' 
+            });
+        }
+    }
+
+    // Get event participants
+    static async getEventParticipants(req: Request, res: Response): Promise<void> {
+        try {
+            const { eventId } = req.params;
+            const { page = 1, limit = 10, search = '', hasAttended = '' } = req.query;
+            const skip = (Number(page) - 1) * Number(limit);
+
+            // Check if event exists
+            const event = await eventRepository.findOne({
+                where: { id: eventId }
+            });
+
+            if (!event) {
+                res.status(404).json({ 
+                    message: 'Kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            let query = participantRepository.createQueryBuilder('participant')
+                .leftJoinAndSelect('participant.user', 'user')
+                .leftJoinAndSelect('participant.event', 'event')
+                .where('participant.event.id = :eventId', { eventId });
+
+            // Apply search filter
+            if (search) {
+                query = query.andWhere(
+                    'LOWER(user.name) LIKE LOWER(:search) OR LOWER(user.email) LIKE LOWER(:search)',
+                    { search: `%${search}%` }
+                );
+            }
+
+            // Apply attendance filter
+            if (hasAttended !== '') {
+                query = query.andWhere('participant.hasAttended = :hasAttended', { 
+                    hasAttended: hasAttended === 'true' 
+                });
+            }
+
+            // Get total count
+            const total = await query.getCount();
+
+            // Get paginated results
+            const participants = await query
+                .skip(skip)
+                .take(Number(limit))
+                .orderBy('participant.createdAt', 'DESC')
+                .getMany();
+
+            res.json({
+                participants,
+                pagination: {
+                    page: Number(page),
+                    limit: Number(limit),
+                    total,
+                    totalPages: Math.ceil(total / Number(limit))
+                }
+            });
+
+        } catch (error) {
+            logger.error('Get event participants error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat mengambil data peserta' 
+            });
+        }
+    }
+
+    // Export event participants to Excel/CSV
+    static async exportEventParticipants(req: Request, res: Response): Promise<void> {
+        try {
+            const { eventId } = req.params;
+            const { format = 'xlsx' } = req.query;
+
+            // Check if event exists
+            const event = await eventRepository.findOne({
+                where: { id: eventId }
+            });
+
+            if (!event) {
+                res.status(404).json({ 
+                    message: 'Kegiatan tidak ditemukan' 
+                });
+                return;
+            }
+
+            // Get all participants for this event
+            const participants = await participantRepository.find({
+                where: { event: { id: eventId } },
+                relations: ['user', 'event']
+            });
+
+            let buffer: Buffer;
+            let filename: string;
+            let contentType: string;
+
+            if (format === 'csv') {
+                const csvData = await ExportService.exportEventParticipantsToCSV(participants, event);
+                buffer = Buffer.from(csvData);
+                filename = `peserta_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
+                contentType = 'text/csv';
+            } else {
+                buffer = await ExportService.exportEventParticipantsToExcel(participants, event);
+                filename = `peserta_${event.title.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+                contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            }
+
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+            res.send(buffer);
+
+        } catch (error) {
+            logger.error('Export event participants error:', error);
+            res.status(500).json({ 
+                message: 'Terjadi kesalahan saat mengexport data peserta' 
+            });
         }
     }
 }

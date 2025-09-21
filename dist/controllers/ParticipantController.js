@@ -43,12 +43,7 @@ class ParticipantController {
             participant.eventId = eventId;
             participant.tokenNumber = tokenNumber;
             await participantRepository.save(participant);
-            try {
-                await (0, emailService_1.sendEventRegistrationEmail)(req.user.email, event.title, tokenNumber);
-            }
-            catch (emailError) {
-                console.error('Failed to send registration email:', emailError);
-            }
+            await (0, emailService_1.sendEventRegistrationEmail)(req.user.email, event.title, tokenNumber);
             return res.status(201).json({
                 message: 'Berhasil mendaftar event. Silakan cek email Anda untuk token kehadiran.',
                 participant
@@ -240,7 +235,8 @@ class ParticipantController {
             let filename;
             let contentType;
             if (format === 'csv') {
-                buffer = await exportService_1.default.exportParticipantsToCSV(participants, event);
+                const csvData = await exportService_1.default.exportParticipantsToCSV(participants, event);
+                buffer = Buffer.from(csvData);
                 filename = `participants_${eventId}.csv`;
                 contentType = 'text/csv';
             }

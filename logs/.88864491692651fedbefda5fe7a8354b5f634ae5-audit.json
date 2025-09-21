@@ -24,6 +24,16 @@
             "date": 1757241187241,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-07.log",
             "hash": "1b005881a4830ed998111de7369ba520e065801dc16d549c611332da452995ff"
+        },
+        {
+            "date": 1757635465516,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-12.log",
+            "hash": "8a02d120b595483b127f8bdc79d519170f7f1e88ba63d56c12ea58e95125c49b"
+        },
+        {
+            "date": 1758439172303,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-09-21.log",
+            "hash": "a0a3853dde4ad5c4fc1acf8bb224ea81fe51e18ce7df4e8674f7e96482d8ff34"
         }
     ],
     "hashType": "sha256"

@@ -299,7 +299,8 @@ export class ParticipantController {
             let contentType: string;
             
             if (format === 'csv') {
-                buffer = await ExportService.exportParticipantsToCSV(participants, event);
+                const csvData = await ExportService.exportParticipantsToCSV(participants, event);
+                buffer = Buffer.from(csvData);
                 filename = `participants_${eventId}.csv`;
                 contentType = 'text/csv';
             } else {

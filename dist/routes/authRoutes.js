@@ -7,9 +7,6 @@ const requireVerification_1 = require("../middlewares/requireVerification");
 const router = (0, express_1.Router)();
 router.post('/register', AuthController_1.AuthController.register);
 router.post('/login', AuthController_1.AuthController.login);
-router.post('/request-login-otp', AuthController_1.AuthController.requestLoginOTP);
-router.post('/verify-otp', AuthController_1.AuthController.verifyOTP);
-router.post('/verify-email', AuthController_1.AuthController.verifyEmail);
 router.post('/request-verification', AuthController_1.AuthController.requestVerification);
 router.post('/request-reset-password', AuthController_1.AuthController.requestPasswordReset);
 router.post('/reset-password', AuthController_1.AuthController.resetPassword);
@@ -24,13 +21,7 @@ router.get('/protected-route', auth_1.auth, requireVerification_1.requireVerific
         }
     });
 });
-router.get('/profile', auth_1.auth, requireVerification_1.requireVerification, (req, res) => {
-    var _a;
-    res.json({
-        message: 'User profile endpoint',
-        userId: (_a = req.user) === null || _a === void 0 ? void 0 : _a.id
-    });
-});
-router.post('/logout', AuthController_1.AuthController.logout);
+router.get('/profile', auth_1.auth, requireVerification_1.requireVerification, AuthController_1.AuthController.getProfile);
+router.patch('/profile', auth_1.auth, requireVerification_1.requireVerification, AuthController_1.AuthController.updateProfile);
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

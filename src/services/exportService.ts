@@ -86,8 +86,8 @@ class ExportService {
         return csv.join('\n');
     }
 
-    // === NEW: Export Participants ===
-    async exportParticipantsToExcel(participants: Participant[], event: Event): Promise<Buffer> {
+    // === NEW: Export Event Participants ===
+    async exportEventParticipantsToExcel(participants: Participant[], event: Event): Promise<Buffer> {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet(`Peserta - ${event.title}`);
 
@@ -118,14 +118,12 @@ class ExportService {
         return Buffer.from(buffer);
     }
 
-    async exportParticipantsToCSV(participants: Participant[], event: Event): Promise<Buffer> {
+    async exportEventParticipantsToCSV(participants: Participant[], _event: Event): Promise<string> {
         const rows = [
             ['No', 'Nama', 'Email', 'Token', 'Hadir', 'Waktu Hadir', 'Sertifikat'].join(',')
         ];
     
-        const eventParticipants = participants.filter(p => p.event.id === event.id);
-    
-        eventParticipants.forEach((p, index) => {
+        participants.forEach((p, index) => {
             rows.push([
                 (index + 1).toString(),
                 `"${p.user.name}"`,
@@ -137,8 +135,16 @@ class ExportService {
             ].join(','));
         });
     
-        const csvString = rows.join('\n');
-        return Buffer.from(csvString);
+        return rows.join('\n');
+    }
+
+    // === NEW: Export Participants (for ParticipantController) ===
+    async exportParticipantsToExcel(participants: Participant[], event: Event): Promise<Buffer> {
+        return this.exportEventParticipantsToExcel(participants, event);
+    }
+
+    async exportParticipantsToCSV(participants: Participant[], event: Event): Promise<string> {
+        return this.exportEventParticipantsToCSV(participants, event);
     }
 
     // === NEW: Export Monthly Statistics ===

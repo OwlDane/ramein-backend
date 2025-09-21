@@ -11,6 +11,7 @@ import authRoutes from './routes/authRoutes';
 import eventRoutes from './routes/events';
 import participantRoutes from './routes/participants';
 import adminRoutes from './routes/adminRoutes';
+import adminAuthRoutes from './routes/adminAuthRoutes';
 import fileRoutes from './routes/fileRoutes';
 import certificateRoutes from './routes/certificateRoutes';
 
@@ -65,6 +66,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', eventCategoryRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/participants', participantRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/certificates', certificateRoutes);

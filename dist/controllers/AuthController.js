@@ -45,6 +45,73 @@ const emailService_1 = require("../services/emailService");
 const otpGenerator_1 = require("../utils/otpGenerator");
 const userRepository = database_1.default.getRepository(User_1.User);
 class AuthController {
+    static async getProfile(req, res) {
+        try {
+            const authReq = req;
+            const user = await userRepository.findOne({ where: { id: authReq.user.id } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+            return res.json({
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                phone: user.phone,
+                address: user.address,
+                education: user.education,
+                isVerified: user.isVerified,
+                isEmailVerified: user.isEmailVerified,
+                isOtpVerified: user.isOtpVerified,
+                role: user.role,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt
+            });
+        }
+        catch (error) {
+            console.error('Get profile error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil profil' });
+        }
+    }
+    static async updateProfile(req, res) {
+        try {
+            const authReq = req;
+            const { name, phone, address, education } = req.body;
+            const user = await userRepository.findOne({ where: { id: authReq.user.id } });
+            if (!user) {
+                return res.status(404).json({ message: 'User tidak ditemukan' });
+            }
+            if (typeof name === 'string' && name.trim())
+                user.name = name.trim();
+            if (typeof phone === 'string')
+                user.phone = phone;
+            if (typeof address === 'string')
+                user.address = address;
+            if (typeof education === 'string')
+                user.education = education;
+            await userRepository.save(user);
+            return res.json({
+                message: 'Profil berhasil diperbarui',
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    name: user.name,
+                    phone: user.phone,
+                    address: user.address,
+                    education: user.education,
+                    isVerified: user.isVerified,
+                    isEmailVerified: user.isEmailVerified,
+                    isOtpVerified: user.isOtpVerified,
+                    role: user.role,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
+                }
+            });
+        }
+        catch (error) {
+            console.error('Update profile error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat memperbarui profil' });
+        }
+    }
     static async register(req, res) {
         try {
             const { email, password, name, phone, address, education } = req.body;
@@ -327,17 +394,6 @@ class AuthController {
         catch (error) {
             console.error('Login error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat login' });
-        }
-    }
-    static async logout(_req, res) {
-        try {
-            return res.json({
-                message: 'Logout berhasil'
-            });
-        }
-        catch (error) {
-            console.error('Logout error:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat logout' });
         }
     }
     static async createAdmin(req, res) {

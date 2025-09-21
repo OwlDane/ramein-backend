@@ -89,7 +89,7 @@ class ExportService {
         });
         return csv.join('\n');
     }
-    async exportParticipantsToExcel(participants, event) {
+    async exportEventParticipantsToExcel(participants, event) {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet(`Peserta - ${event.title}`);
         worksheet.columns = [
@@ -116,12 +116,11 @@ class ExportService {
         const buffer = await workbook.xlsx.writeBuffer();
         return Buffer.from(buffer);
     }
-    async exportParticipantsToCSV(participants, event) {
+    async exportEventParticipantsToCSV(participants, _event) {
         const rows = [
             ['No', 'Nama', 'Email', 'Token', 'Hadir', 'Waktu Hadir', 'Sertifikat'].join(',')
         ];
-        const eventParticipants = participants.filter(p => p.event.id === event.id);
-        eventParticipants.forEach((p, index) => {
+        participants.forEach((p, index) => {
             rows.push([
                 (index + 1).toString(),
                 `"${p.user.name}"`,
@@ -132,8 +131,13 @@ class ExportService {
                 p.certificateUrl || '-'
             ].join(','));
         });
-        const csvString = rows.join('\n');
-        return Buffer.from(csvString);
+        return rows.join('\n');
+    }
+    async exportParticipantsToExcel(participants, event) {
+        return this.exportEventParticipantsToExcel(participants, event);
+    }
+    async exportParticipantsToCSV(participants, event) {
+        return this.exportEventParticipantsToCSV(participants, event);
     }
     async exportMonthlyStatisticsToExcel(statistics) {
         const workbook = new ExcelJS.Workbook();
