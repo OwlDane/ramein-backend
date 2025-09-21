@@ -3,8 +3,16 @@ import * as jwt from 'jsonwebtoken';
 import AppDataSource from '../config/database';
 import { User } from '../entities/User';
 
+// Define SessionData interface
+interface SessionData {
+    lastActivity: number;
+    userId: string;
+}
+
+// Updated AuthRequest interface to include sessionData
 export interface AuthRequest extends Request {
     user?: any;
+    sessionData?: SessionData;  // Add this property
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {

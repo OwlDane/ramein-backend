@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import AppDataSource from '../config/database';
 import { User, UserRole } from '../entities/User';
 import logger from '../utils/logger';
+import { createOrUpdateSession, removeSession } from '../middlewares/sessionTimeout';
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -70,6 +71,9 @@ export class AdminAuthController {
                 }
             );
 
+            // Create session for the admin
+            createOrUpdateSession(adminToken, admin.id);
+
             // Log successful admin login
             logger.info(`Admin login successful: ${admin.email}`);
 
@@ -96,6 +100,11 @@ export class AdminAuthController {
     // Admin logout
     static async logout(req: Request, res: Response) {
         try {
+            const token = req.header('Authorization')?.replace('Bearer ', '');
+            if (token) {
+                removeSession(token);
+            }
+            
             // Log admin logout
             logger.info(`Admin logout: ${req.user?.email}`);
             

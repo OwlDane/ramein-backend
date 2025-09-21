@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { AuthRequest } from './auth';
 
+// Define SessionData interface here since it's specific to session management
 interface SessionData {
     lastActivity: number;
     userId: string;
@@ -8,59 +9,103 @@ interface SessionData {
 
 // In-memory session store (in production, use Redis or database)
 const sessionStore = new Map<string, SessionData>();
-const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Function to create or update a session
+export const createOrUpdateSession = (token: string, userId: string) => {
+    sessionStore.set(token, {
+        lastActivity: Date.now(),
+        userId: userId
+    });
+};
+
+// Function to get session data
+export const getSession = (token: string): SessionData | undefined => {
+    return sessionStore.get(token);
+};
+
+// Function to remove session
+export const removeSession = (token: string) => {
+    sessionStore.delete(token);
+};
+
+// Main session timeout middleware
 export const sessionTimeout = (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
-       
+
         if (!token) {
             return next();
         }
 
-        // Check if session exists and is still valid
-        const sessionData = sessionStore.get(token);
         const now = Date.now();
+        const sessionData = sessionStore.get(token);
 
-        if (sessionData) {
-            // Check if session has expired
-            if (now - sessionData.lastActivity > SESSION_TIMEOUT) {
-                // Session expired, remove it
-                sessionStore.delete(token);
-                return res.status(401).json({
-                    message: 'Session expired due to inactivity. Please login again.',
-                    code: 'SESSION_EXPIRED'
-                });
-            }
-
-            // Update last activity
-            sessionData.lastActivity = now;
-            sessionStore.set(token, sessionData);
-        } else {
-            // Create new session
-            if (req.user) {
-                sessionStore.set(token, {
-                    lastActivity: now,
-                    userId: req.user.id
-                });
-            }
+        // Check if session exists
+        if (!sessionData) {
+            // If no session but has token, they need to login again
+            return res.status(401).json({
+                status: 'error',
+                message: 'No active session found. Please login again.'
+            });
         }
+
+        // Check for inactivity timeout
+        if (now - sessionData.lastActivity > INACTIVITY_TIMEOUT) {
+            // Session expired due to inactivity
+            sessionStore.delete(token);
+            return res.status(401).json({
+                status: 'error',
+                message: 'Session expired due to inactivity. Please login again.',
+                code: 'SESSION_EXPIRED'
+            });
+        }
+
+        // Update last activity timestamp for all authenticated requests
+        // (You can modify this logic based on your requirements)
+        sessionData.lastActivity = now;
+        sessionStore.set(token, sessionData);
+
+        // Attach session data to request for use in other middlewares/routes
+        req.sessionData = sessionData;
 
         next();
     } catch (error) {
         console.error('Session timeout middleware error:', error);
-        next();
+        next(error);
     }
 };
 
 // Cleanup expired sessions every minute
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
     const now = Date.now();
-    for (const [token, sessionData] of sessionStore.entries()) {
-        if (now - sessionData.lastActivity > SESSION_TIMEOUT) {
+    let cleanedCount = 0;
+
+    for (const [token, session] of sessionStore.entries()) {
+        if (now - session.lastActivity > INACTIVITY_TIMEOUT) {
             sessionStore.delete(token);
+            cleanedCount++;
         }
     }
-}, 60 * 1000);
+
+    if (cleanedCount > 0) {
+        console.log(`Cleaned up ${cleanedCount} expired sessions`);
+    }
+}, 60000); // Run every minute
+
+// Graceful cleanup on process termination
+process.on('SIGINT', () => {
+    clearInterval(cleanupInterval);
+    sessionStore.clear();
+    console.log('Session cleanup completed');
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    clearInterval(cleanupInterval);
+    sessionStore.clear();
+    console.log('Session cleanup completed');
+    process.exit(0);
+});
 
 export default sessionTimeout;
