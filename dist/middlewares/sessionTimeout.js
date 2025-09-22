@@ -1,8 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sessionTimeout = void 0;
+exports.sessionTimeout = exports.removeSession = exports.getSession = exports.createOrUpdateSession = void 0;
 const sessionStore = new Map();
-const SESSION_TIMEOUT = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+const createOrUpdateSession = (token, userId) => {
+    sessionStore.set(token, {
+        lastActivity: Date.now(),
+        userId: userId
+    });
+};
+exports.createOrUpdateSession = createOrUpdateSession;
+const getSession = (token) => {
+    return sessionStore.get(token);
+};
+exports.getSession = getSession;
+const removeSession = (token) => {
+    sessionStore.delete(token);
+};
+exports.removeSession = removeSession;
 const sessionTimeout = (req, res, next) => {
     var _a;
     try {
@@ -10,42 +25,57 @@ const sessionTimeout = (req, res, next) => {
         if (!token) {
             return next();
         }
-        const sessionData = sessionStore.get(token);
         const now = Date.now();
-        if (sessionData) {
-            if (now - sessionData.lastActivity > SESSION_TIMEOUT) {
-                sessionStore.delete(token);
-                return res.status(401).json({
-                    message: 'Session expired due to inactivity. Please login again.',
-                    code: 'SESSION_EXPIRED'
-                });
-            }
-            sessionData.lastActivity = now;
-            sessionStore.set(token, sessionData);
+        const sessionData = sessionStore.get(token);
+        if (!sessionData) {
+            return res.status(401).json({
+                status: 'error',
+                message: 'No active session found. Please login again.'
+            });
         }
-        else {
-            if (req.user) {
-                sessionStore.set(token, {
-                    lastActivity: now,
-                    userId: req.user.id
-                });
-            }
+        if (now - sessionData.lastActivity > INACTIVITY_TIMEOUT) {
+            sessionStore.delete(token);
+            return res.status(401).json({
+                status: 'error',
+                message: 'Session expired due to inactivity. Please login again.',
+                code: 'SESSION_EXPIRED'
+            });
         }
+        sessionData.lastActivity = now;
+        sessionStore.set(token, sessionData);
+        req.sessionData = sessionData;
         next();
     }
     catch (error) {
         console.error('Session timeout middleware error:', error);
-        next();
+        next(error);
     }
 };
 exports.sessionTimeout = sessionTimeout;
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
     const now = Date.now();
-    for (const [token, sessionData] of sessionStore.entries()) {
-        if (now - sessionData.lastActivity > SESSION_TIMEOUT) {
+    let cleanedCount = 0;
+    for (const [token, session] of sessionStore.entries()) {
+        if (now - session.lastActivity > INACTIVITY_TIMEOUT) {
             sessionStore.delete(token);
+            cleanedCount++;
         }
     }
-}, 60 * 1000);
+    if (cleanedCount > 0) {
+        console.log(`Cleaned up ${cleanedCount} expired sessions`);
+    }
+}, 60000);
+process.on('SIGINT', () => {
+    clearInterval(cleanupInterval);
+    sessionStore.clear();
+    console.log('Session cleanup completed');
+    process.exit(0);
+});
+process.on('SIGTERM', () => {
+    clearInterval(cleanupInterval);
+    sessionStore.clear();
+    console.log('Session cleanup completed');
+    process.exit(0);
+});
 exports.default = exports.sessionTimeout;
 //# sourceMappingURL=sessionTimeout.js.map

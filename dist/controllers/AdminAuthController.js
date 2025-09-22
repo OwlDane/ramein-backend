@@ -9,6 +9,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const database_1 = __importDefault(require("../config/database"));
 const User_1 = require("../entities/User");
 const logger_1 = __importDefault(require("../utils/logger"));
+const sessionTimeout_1 = require("../middlewares/sessionTimeout");
 const userRepository = database_1.default.getRepository(User_1.User);
 class AdminAuthController {
     static async login(req, res) {
@@ -57,6 +58,7 @@ class AdminAuthController {
                 expiresIn: '5m',
                 issuer: 'ramein-admin'
             });
+            (0, sessionTimeout_1.createOrUpdateSession)(adminToken, admin.id);
             logger_1.default.info(`Admin login successful: ${admin.email}`);
             res.json({
                 message: 'Login admin berhasil',
@@ -78,9 +80,13 @@ class AdminAuthController {
         }
     }
     static async logout(req, res) {
-        var _a;
+        var _a, _b;
         try {
-            logger_1.default.info(`Admin logout: ${(_a = req.user) === null || _a === void 0 ? void 0 : _a.email}`);
+            const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+            if (token) {
+                (0, sessionTimeout_1.removeSession)(token);
+            }
+            logger_1.default.info(`Admin logout: ${(_b = req.user) === null || _b === void 0 ? void 0 : _b.email}`);
             res.json({
                 message: 'Logout admin berhasil'
             });

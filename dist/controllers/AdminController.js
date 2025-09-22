@@ -23,38 +23,40 @@ class AdminController {
             const endOfYear = new Date(currentYear, 11, 31);
             const monthlyEvents = await eventRepository
                 .createQueryBuilder('event')
-                .select('EXTRACT(MONTH FROM event.date) as month')
+                .select('EXTRACT(MONTH FROM date)', 'month')
                 .addSelect('COUNT(*)', 'count')
-                .where('event.date BETWEEN :start AND :end', {
+                .where('date BETWEEN :start AND :end', {
+                start: startOfYear,
+                end: endOfYear
+            })
+                .groupBy('EXTRACT(MONTH FROM date)')
+                .orderBy('month', 'ASC')
+                .getRawMany();
+            const monthlyParticipants = await participantRepository
+                .createQueryBuilder('participant')
+                .select('EXTRACT(MONTH FROM participant.createdAt)', 'month')
+                .addSelect('COUNT(*)', 'registrations')
+                .addSelect('COUNT(CASE WHEN participant.hasAttended = true THEN 1 END)', 'attendance')
+                .where('participant.createdAt BETWEEN :start AND :end', {
                 start: startOfYear,
                 end: endOfYear
             })
                 .groupBy('month')
                 .orderBy('month', 'ASC')
                 .getRawMany();
-            const monthlyParticipants = await participantRepository
-                .createQueryBuilder('participant')
-                .leftJoin('participant.event', 'event')
-                .select('EXTRACT(MONTH FROM event.date)', 'month')
-                .addSelect('COUNT(*)', 'registrations')
-                .addSelect('COUNT(CASE WHEN participant.hasAttended = true THEN 1 END)', 'attendance')
-                .where('EXTRACT(YEAR FROM event.date) = :year', { year: currentYear })
-                .groupBy('month')
-                .orderBy('month', 'ASC')
-                .getRawMany();
             const topEvents = await eventRepository
                 .createQueryBuilder('event')
-                .leftJoin('event.participants', 'participant')
+                .leftJoinAndSelect('event.participants', 'participant')
                 .select([
                 'event.id',
                 'event.title',
                 'event.date',
                 'event.time',
-                'event.location',
-                'COUNT(participant.id) as participantCount'
+                'event.location'
             ])
-                .groupBy('event.id')
-                .orderBy('participantCount', 'DESC')
+                .addSelect('COUNT(participant.id)', 'participant_count')
+                .groupBy('event.id, event.title, event.date, event.time, event.location')
+                .orderBy('participant_count', 'DESC')
                 .limit(10)
                 .getRawMany();
             const totalEvents = await eventRepository.count();
@@ -63,19 +65,43 @@ class AdminController {
             const totalAttendance = await participantRepository.count({
                 where: { hasAttended: true }
             });
-            const recentEvents = await eventRepository.find({
-                order: { createdAt: 'DESC' },
-                take: 5
-            });
-            const recentParticipants = await participantRepository.find({
-                relations: ['user', 'event'],
-                order: { createdAt: 'DESC' },
-                take: 10
-            });
+            const recentEvents = await eventRepository
+                .createQueryBuilder('event')
+                .select([
+                'event.id',
+                'event.title',
+                'event.date',
+                'event.createdAt'
+            ])
+                .orderBy('event.createdAt', 'DESC')
+                .limit(5)
+                .getRawMany();
+            const recentParticipants = await participantRepository
+                .createQueryBuilder('participant')
+                .leftJoinAndSelect('participant.user', 'user')
+                .leftJoinAndSelect('participant.event', 'event')
+                .select([
+                'participant.id',
+                'participant.hasAttended',
+                'participant.createdAt',
+                'user.name',
+                'user.email',
+                'event.title'
+            ])
+                .orderBy('participant.createdAt', 'DESC')
+                .limit(10)
+                .getRawMany();
             return res.json({
                 monthlyEvents,
                 monthlyParticipants,
-                topEvents,
+                topEvents: topEvents.map(event => ({
+                    id: event.event_id,
+                    title: event.event_title,
+                    date: event.event_date,
+                    time: event.event_time,
+                    location: event.event_location,
+                    participantCount: parseInt(event.participant_count)
+                })),
                 overallStats: {
                     totalEvents,
                     totalParticipants,
@@ -84,8 +110,24 @@ class AdminController {
                     attendanceRate: totalParticipants > 0 ? (totalAttendance / totalParticipants * 100).toFixed(2) : 0
                 },
                 recentActivities: {
-                    events: recentEvents,
-                    participants: recentParticipants
+                    events: recentEvents.map(event => ({
+                        id: event.event_id,
+                        title: event.event_title,
+                        date: event.event_date,
+                        createdAt: event.event_created_at
+                    })),
+                    participants: recentParticipants.map(participant => ({
+                        id: participant.participant_id,
+                        hasAttended: participant.participant_has_attended,
+                        createdAt: participant.participant_created_at,
+                        user: {
+                            name: participant.user_name,
+                            email: participant.user_email
+                        },
+                        event: {
+                            title: participant.event_title
+                        }
+                    }))
                 }
             });
         }
@@ -266,29 +308,65 @@ class AdminController {
             const { page = 1, limit = 10, search = '', categoryId = '' } = req.query;
             const skip = (Number(page) - 1) * Number(limit);
             let query = eventRepository.createQueryBuilder('event')
-                .leftJoinAndSelect('event.participants', 'participants');
+                .leftJoin('event.participants', 'participants')
+                .select([
+                'event.id',
+                'event.title',
+                'event.date',
+                'event.time',
+                'event.location',
+                'event.flyer',
+                'event.certificate',
+                'event.description',
+                'event.category',
+                'event.price',
+                'event.createdBy',
+                'event.isPublished',
+                'event.createdAt',
+                'event.updatedAt'
+            ])
+                .addSelect('COUNT(DISTINCT participants.id)', 'participant_count')
+                .addSelect('COUNT(DISTINCT CASE WHEN participants.hasAttended = true THEN participants.id END)', 'attendance_count')
+                .groupBy('event.id');
             if (search) {
                 query = query.where('LOWER(event.title) LIKE LOWER(:search) OR LOWER(event.description) LIKE LOWER(:search)', { search: `%${search}%` });
             }
             if (categoryId) {
                 query = query.andWhere('event.category = :categoryId', { categoryId });
             }
-            const total = await query.getCount();
+            const totalQuery = eventRepository.createQueryBuilder('event');
+            if (search) {
+                totalQuery.where('LOWER(event.title) LIKE LOWER(:search) OR LOWER(event.description) LIKE LOWER(:search)', { search: `%${search}%` });
+            }
+            if (categoryId) {
+                totalQuery.andWhere('event.category = :categoryId', { categoryId });
+            }
+            const total = await totalQuery.getCount();
             const events = await query
                 .skip(skip)
                 .take(Number(limit))
                 .orderBy('event.date', 'ASC')
-                .getMany();
-            const eventsWithStats = events.map(event => {
-                var _a, _b;
-                return ({
-                    ...event,
-                    participantCount: ((_a = event.participants) === null || _a === void 0 ? void 0 : _a.length) || 0,
-                    attendanceCount: ((_b = event.participants) === null || _b === void 0 ? void 0 : _b.filter(p => p.hasAttended).length) || 0
-                });
-            });
+                .getRawMany();
+            const formattedEvents = events.map(event => ({
+                id: event.event_id,
+                title: event.event_title,
+                date: event.event_date,
+                time: event.event_time,
+                location: event.event_location,
+                flyer: event.event_flyer,
+                certificate: event.event_certificate,
+                description: event.event_description,
+                category: event.event_category,
+                price: event.event_price,
+                createdBy: event.event_created_by,
+                isPublished: event.event_is_published,
+                createdAt: event.event_created_at,
+                updatedAt: event.event_updated_at,
+                participantCount: parseInt(event.participant_count) || 0,
+                attendanceCount: parseInt(event.attendance_count) || 0
+            }));
             res.json({
-                events: eventsWithStats,
+                events: formattedEvents,
                 pagination: {
                     page: Number(page),
                     limit: Number(limit),
