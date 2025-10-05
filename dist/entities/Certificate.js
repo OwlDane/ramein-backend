@@ -85,12 +85,12 @@ __decorate([
     __metadata("design:type", Date)
 ], Certificate.prototype, "updatedAt", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Participant_1.Participant, participant => participant.certificates),
+    (0, typeorm_1.ManyToOne)(() => Participant_1.Participant, participant => participant.user),
     (0, typeorm_1.JoinColumn)({ name: 'participantId' }),
     __metadata("design:type", Participant_1.Participant)
 ], Certificate.prototype, "participant", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => Event_1.Event, event => event.certificates),
+    (0, typeorm_1.ManyToOne)(() => Event_1.Event, event => event.participants),
     (0, typeorm_1.JoinColumn)({ name: 'eventId' }),
     __metadata("design:type", Event_1.Event)
 ], Certificate.prototype, "event", void 0);

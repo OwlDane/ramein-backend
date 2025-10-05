@@ -38,7 +38,6 @@ const User_1 = require("../entities/User");
 const Event_1 = require("../entities/Event");
 const Participant_1 = require("../entities/Participant");
 const KategoriKegiatan_1 = require("../entities/KategoriKegiatan");
-const EventPackage_1 = require("../entities/EventPackage");
 const Certificate_1 = require("../entities/Certificate");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
@@ -52,7 +51,7 @@ const databaseConfig = {
     ssl: {
         rejectUnauthorized: false
     },
-    entities: [User_1.User, Event_1.Event, Participant_1.Participant, KategoriKegiatan_1.KategoriKegiatan, EventPackage_1.EventPackage, Certificate_1.Certificate],
+    entities: [User_1.User, Event_1.Event, Participant_1.Participant, KategoriKegiatan_1.KategoriKegiatan, Certificate_1.Certificate],
     synchronize: false,
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],

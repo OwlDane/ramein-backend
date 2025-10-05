@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EventPackage = exports.PackageType = void 0;
 const typeorm_1 = require("typeorm");
 const Event_1 = require("./Event");
-const Participant_1 = require("./Participant");
 var PackageType;
 (function (PackageType) {
     PackageType["BASIC"] = "BASIC";
@@ -100,10 +99,6 @@ __decorate([
     (0, typeorm_1.JoinColumn)({ name: "eventId" }),
     __metadata("design:type", Event_1.Event)
 ], EventPackage.prototype, "event", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => Participant_1.Participant, participant => participant.package),
-    __metadata("design:type", Array)
-], EventPackage.prototype, "participants", void 0);
 exports.EventPackage = EventPackage = __decorate([
     (0, typeorm_1.Entity)()
 ], EventPackage);

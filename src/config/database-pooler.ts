@@ -3,7 +3,7 @@ import { User } from "../entities/User";
 import { Event } from "../entities/Event";
 import { Participant } from "../entities/Participant";
 import { KategoriKegiatan } from "../entities/KategoriKegiatan";
-import { EventPackage } from "../entities/EventPackage";
+import { Certificate } from "../entities/Certificate";
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -19,8 +19,8 @@ const databaseConfig: DataSourceOptions = {
     ssl: {
         rejectUnauthorized: false
     },
-    entities: [User, Event, Participant, KategoriKegiatan, EventPackage],
-    synchronize: process.env.NODE_ENV !== 'production',
+    entities: [User, Event, Participant, KategoriKegiatan, Certificate],
+    synchronize: false,
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],
     subscribers: [],

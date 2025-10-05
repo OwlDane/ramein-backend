@@ -1,8 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from "typeorm";
 import { Participant } from "./Participant";
-import { Certificate } from "./Certificate";
-import { EventPackage } from "./EventPackage";
-
 
 @Entity()
 export class Event {
@@ -42,12 +39,6 @@ export class Event {
     @Column({ default: false })
     isPublished: boolean;
 
-
-
-    
-
-    
-
     @CreateDateColumn()
     createdAt: Date;
 
@@ -56,12 +47,4 @@ export class Event {
 
     @OneToMany(() => Participant, participant => participant.event)
     participants: Participant[];
-
-    @OneToMany(() => Certificate, certificate => certificate.event)
-    certificates: Certificate[];
-
-    @OneToMany(() => EventPackage, eventPackage => eventPackage.event)
-    packages: EventPackage[];
-
-
 }

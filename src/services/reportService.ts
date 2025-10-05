@@ -129,7 +129,7 @@ export class ReportService {
         }
 
         const events = await this.eventRepository.find({
-            relations: ['participants']
+            relations: ['participants', 'participants.user']
         });
 
         return events
@@ -141,8 +141,8 @@ export class ReportService {
                 totalParticipants: event.participants.length,
                 participants: event.participants.map(p => ({
                     id: p.id,
-                    name: p.name,
-                    email: p.email,
+                    name: p.user?.name || 'Unknown',
+                    email: p.user?.email || 'Unknown',
                     hasAttended: p.hasAttended
                 }))
             }))
@@ -162,7 +162,7 @@ export class ReportService {
 
         const event = await this.eventRepository.findOne({
             where: { id: eventId },
-            relations: ['participants']
+            relations: ['participants', 'participants.user']
         });
 
         if (!event) {
@@ -187,10 +187,10 @@ export class ReportService {
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-        // Get participant demographics (example: by registration source if available)
+        // Get participant demographics (by attendance status)
         const demographics = event.participants.reduce((acc, participant) => {
-            const source = participant.registrationSource || 'unknown';
-            acc[source] = (acc[source] || 0) + 1;
+            const status = participant.hasAttended ? 'attended' : 'registered';
+            acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 

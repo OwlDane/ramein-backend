@@ -146,6 +146,17 @@ class EventController {
             if (req.user.role !== 'ADMIN') {
                 return res.status(403).json({ message: 'Hanya admin yang dapat mengubah event' });
             }
+            if (date) {
+                const eventDate = new Date(date);
+                const today = new Date();
+                const threeDaysFromNow = new Date(today);
+                threeDaysFromNow.setDate(today.getDate() + 3);
+                if (eventDate < threeDaysFromNow) {
+                    return res.status(400).json({
+                        message: 'Tanggal kegiatan hanya bisa diubah maksimal H-3 dari tanggal pelaksanaan'
+                    });
+                }
+            }
             if (title)
                 event.title = title;
             if (date)

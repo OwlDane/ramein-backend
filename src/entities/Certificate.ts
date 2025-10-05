@@ -31,7 +31,6 @@ export class Certificate {
     @Column({ nullable: true })
     verifiedBy: string;
 
-    // ✅ Added missing fields
     @Column({ nullable: true })
     verificationCode: string;
 
@@ -57,11 +56,11 @@ export class Certificate {
     updatedAt: Date;
 
     // Relations
-    @ManyToOne(() => Participant, participant => participant.certificates)
+    @ManyToOne(() => Participant, participant => participant.user)
     @JoinColumn({ name: 'participantId' })
     participant: Participant;
 
-    @ManyToOne(() => Event, event => event.certificates)
+    @ManyToOne(() => Event, event => event.participants)
     @JoinColumn({ name: 'eventId' })
     event: Event;
 }

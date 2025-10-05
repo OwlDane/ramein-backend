@@ -12,8 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Event = void 0;
 const typeorm_1 = require("typeorm");
 const Participant_1 = require("./Participant");
-const Certificate_1 = require("./Certificate");
-const EventPackage_1 = require("./EventPackage");
 let Event = class Event {
 };
 exports.Event = Event;
@@ -77,14 +75,6 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => Participant_1.Participant, participant => participant.event),
     __metadata("design:type", Array)
 ], Event.prototype, "participants", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => Certificate_1.Certificate, certificate => certificate.event),
-    __metadata("design:type", Array)
-], Event.prototype, "certificates", void 0);
-__decorate([
-    (0, typeorm_1.OneToMany)(() => EventPackage_1.EventPackage, eventPackage => eventPackage.event),
-    __metadata("design:type", Array)
-], Event.prototype, "packages", void 0);
 exports.Event = Event = __decorate([
     (0, typeorm_1.Entity)()
 ], Event);

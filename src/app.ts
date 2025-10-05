@@ -14,7 +14,7 @@ import adminRoutes from './routes/adminRoutes';
 import adminAuthRoutes from './routes/adminAuthRoutes';
 import fileRoutes from './routes/fileRoutes';
 import certificateRoutes from './routes/certificateRoutes';
-
+import statisticsRoutes from './routes/statisticsRoutes';
 
 // Import middleware
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
@@ -70,6 +70,9 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/statistics', statisticsRoutes);
+
+// Error handling middleware
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {

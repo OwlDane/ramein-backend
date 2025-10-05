@@ -99,7 +99,7 @@ class ReportService {
             await database_1.default.initialize();
         }
         const events = await this.eventRepository.find({
-            relations: ['participants']
+            relations: ['participants', 'participants.user']
         });
         return events
             .map(event => ({
@@ -108,12 +108,15 @@ class ReportService {
             date: event.date,
             location: event.location,
             totalParticipants: event.participants.length,
-            participants: event.participants.map(p => ({
-                id: p.id,
-                name: p.name,
-                email: p.email,
-                hasAttended: p.hasAttended
-            }))
+            participants: event.participants.map(p => {
+                var _a, _b;
+                return ({
+                    id: p.id,
+                    name: ((_a = p.user) === null || _a === void 0 ? void 0 : _a.name) || 'Unknown',
+                    email: ((_b = p.user) === null || _b === void 0 ? void 0 : _b.email) || 'Unknown',
+                    hasAttended: p.hasAttended
+                });
+            })
         }))
             .sort((a, b) => b.totalParticipants - a.totalParticipants)
             .slice(0, limit);
@@ -124,7 +127,7 @@ class ReportService {
         }
         const event = await this.eventRepository.findOne({
             where: { id: eventId },
-            relations: ['participants']
+            relations: ['participants', 'participants.user']
         });
         if (!event) {
             throw new Error('Event not found');
@@ -143,8 +146,8 @@ class ReportService {
             .map(([date, count]) => ({ date, count }))
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         const demographics = event.participants.reduce((acc, participant) => {
-            const source = participant.registrationSource || 'unknown';
-            acc[source] = (acc[source] || 0) + 1;
+            const status = participant.hasAttended ? 'attended' : 'registered';
+            acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {});
         return {
