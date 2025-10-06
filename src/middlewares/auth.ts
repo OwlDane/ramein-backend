@@ -20,21 +20,30 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
         if (!token) {
-            throw new Error();
+            throw new Error('No token provided');
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        
+        // Support both userId and id fields (for admin and regular users)
+        const userId = decoded.userId || decoded.id;
+        
+        if (!userId) {
+            throw new Error('Invalid token payload');
+        }
+
         const user = await AppDataSource.getRepository(User).findOne({
-            where: { id: (decoded as any).userId }
+            where: { id: userId }
         });
 
         if (!user) {
-            throw new Error();
+            throw new Error('User not found');
         }
 
         req.user = user;
         next();
     } catch (error) {
+        console.error('Auth error:', error);
         res.status(401).json({ message: 'Please authenticate' });
     }
 };

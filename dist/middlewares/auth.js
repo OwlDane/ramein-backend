@@ -45,19 +45,24 @@ const auth = async (req, res, next) => {
     try {
         const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
         if (!token) {
-            throw new Error();
+            throw new Error('No token provided');
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const userId = decoded.userId || decoded.id;
+        if (!userId) {
+            throw new Error('Invalid token payload');
+        }
         const user = await database_1.default.getRepository(User_1.User).findOne({
-            where: { id: decoded.userId }
+            where: { id: userId }
         });
         if (!user) {
-            throw new Error();
+            throw new Error('User not found');
         }
         req.user = user;
         next();
     }
     catch (error) {
+        console.error('Auth error:', error);
         res.status(401).json({ message: 'Please authenticate' });
     }
 };

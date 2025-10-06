@@ -52,8 +52,9 @@
     "db:test:pooler": "ts-node src/test-pooler-connection.ts",
     "db:migrate": "ts-node src/config/run-migrations.ts",
     "db:seed": "ts-node src/seed-data.ts",
+    "db:seed:templates": "ts-node src/scripts/seed-certificate-templates.ts",
     "db:reset-seed": "ts-node src/scripts/reset-and-seed.ts",
-    "db:setup": "npm run db:migrate && npm run db:seed",
+    "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed:templates",
     "lint": "tsc --noEmit",
     "clean": "rm -rf dist",
     "postinstall": "npm run build"

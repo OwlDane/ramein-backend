@@ -4,6 +4,7 @@ import { Event } from "../entities/Event";
 import { Participant } from "../entities/Participant";
 import { KategoriKegiatan } from "../entities/KategoriKegiatan";
 import { Certificate } from "../entities/Certificate";
+import { CertificateTemplate } from "../entities/CertificateTemplate";
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -19,7 +20,7 @@ const databaseConfig: DataSourceOptions = {
     ssl: {
         rejectUnauthorized: false
     },
-    entities: [User, Event, Participant, KategoriKegiatan, Certificate],
+    entities: [User, Event, Participant, KategoriKegiatan, Certificate, CertificateTemplate],
     synchronize: false, // Disable synchronize to prevent conflicts with existing data
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],

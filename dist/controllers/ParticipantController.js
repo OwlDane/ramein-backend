@@ -82,10 +82,27 @@ class ParticipantController {
             participant.hasAttended = true;
             participant.attendedAt = new Date();
             await participantRepository.save(participant);
-            return res.json({
-                message: 'Daftar hadir berhasil diisi',
-                participant
-            });
+            try {
+                const certificate = await certificateService_1.certificateService.generateCertificate(participant.id, participant.eventId, 'SYSTEM');
+                participant.certificateUrl = certificate.certificateUrl;
+                await participantRepository.save(participant);
+                return res.json({
+                    message: 'Daftar hadir berhasil diisi dan sertifikat telah digenerate',
+                    participant,
+                    certificate: {
+                        certificateUrl: certificate.certificateUrl,
+                        certificateNumber: certificate.certificateNumber
+                    }
+                });
+            }
+            catch (certError) {
+                console.error('Certificate generation error:', certError);
+                return res.json({
+                    message: 'Daftar hadir berhasil diisi. Sertifikat akan digenerate secara manual.',
+                    participant,
+                    certificateWarning: 'Sertifikat gagal digenerate otomatis'
+                });
+            }
         }
         catch (error) {
             console.error('Mark attendance error:', error);
@@ -94,12 +111,26 @@ class ParticipantController {
     }
     static async getUserEvents(req, res) {
         try {
-            const participants = await participantRepository.find({
-                where: { userId: req.user.id },
-                relations: ['event'],
-                order: { createdAt: 'DESC' }
-            });
-            return res.json(participants);
+            const participants = await participantRepository
+                .createQueryBuilder('participant')
+                .leftJoinAndSelect('participant.event', 'event')
+                .leftJoin('certificate', 'cert', 'cert.participantId = participant.id')
+                .addSelect([
+                'cert.id',
+                'cert.certificateNumber',
+                'cert.certificateUrl',
+                'cert.verificationCode',
+                'cert.isVerified',
+                'cert.issuedAt'
+            ])
+                .where('participant.userId = :userId', { userId: req.user.id })
+                .orderBy('participant.createdAt', 'DESC')
+                .getMany();
+            const result = participants.map(p => ({
+                ...p,
+                certificate: p.cert || null
+            }));
+            return res.json(result);
         }
         catch (error) {
             console.error('Get user events error:', error);

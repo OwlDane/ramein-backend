@@ -41,10 +41,13 @@ const database_1 = __importDefault(require("../config/database"));
 const Certificate_1 = require("../entities/Certificate");
 const Participant_1 = require("../entities/Participant");
 const Event_1 = require("../entities/Event");
+const CertificateTemplate_1 = require("../entities/CertificateTemplate");
 const certificateGenerator_1 = require("../utils/certificateGenerator");
 const cacheService_1 = require("./cacheService");
+const pdfGenerationService_1 = __importDefault(require("./pdfGenerationService"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const date_fns_1 = require("date-fns");
 class CertificateService {
     constructor() {
         this.certificateRepository = database_1.default.getRepository(Certificate_1.Certificate);
@@ -398,48 +401,34 @@ class CertificateService {
     }
     async createCertificateFile(participant, event, certificateNumber) {
         var _a;
-        const uploadDir = path.join(__dirname, '../../public/certificates');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        try {
+            const templateRepository = database_1.default.getRepository(CertificateTemplate_1.CertificateTemplate);
+            const template = await templateRepository.findOne({
+                where: { isDefault: true, isActive: true }
+            });
+            const uploadDir = path.join(__dirname, '../../uploads/certificates');
+            pdfGenerationService_1.default.ensureUploadDir(uploadDir);
+            const fileName = pdfGenerationService_1.default.generateFilename(certificateNumber);
+            const filePath = path.join(uploadDir, fileName);
+            const certificateData = {
+                nama: ((_a = participant.user) === null || _a === void 0 ? void 0 : _a.name) || 'Participant',
+                event: event.title,
+                tanggal: (0, date_fns_1.format)(new Date(event.date), 'dd MMMM yyyy'),
+                nomor_sertifikat: certificateNumber,
+                lokasi: event.location
+            };
+            if (template && template.templateUrl && fs.existsSync(template.templateUrl)) {
+                await pdfGenerationService_1.default.generateCertificateWithTemplate(template, certificateData, filePath);
+            }
+            else {
+                await pdfGenerationService_1.default.generateSimpleCertificate(certificateData, filePath);
+            }
+            return `/uploads/certificates/${fileName}`;
         }
-        const fileName = `${certificateNumber}.html`;
-        const filePath = path.join(uploadDir, fileName);
-        const html = `<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Certificate of Participation</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-                .certificate { border: 2px solid #000; padding: 30px; max-width: 800px; margin: 0 auto; }
-                h1 { color: #2c3e50; }
-                .participant { font-size: 24px; margin: 20px 0; }
-                .event { font-size: 20px; margin: 10px 0; }
-                .date { margin: 20px 0; }
-                .signature { margin-top: 50px; }
-                .verification { font-size: 12px; margin-top: 30px; }
-            </style>
-        </head>
-        <body>
-            <div class="certificate">
-                <h1>CERTIFICATE OF PARTICIPATION</h1>
-                <p>This is to certify that</p>
-                <div class="participant"><strong>${((_a = participant.user) === null || _a === void 0 ? void 0 : _a.name) || 'Participant'}</strong></div>
-                <p>has successfully participated in</p>
-                <div class="event"><strong>${event.title}</strong></div>
-                <div class="date">Issued on: ${new Date().toLocaleDateString()}</div>
-                <div class="signature">
-                    <div>________________________</div>
-                    <div>Authorized Signature</div>
-                </div>
-                <div class="verification">
-                    <p>Certificate ID: ${certificateNumber}</p>
-                    <p>Verify at: ${process.env.APP_URL}/verify/${certificateNumber}</p>
-                </div>
-            </div>
-        </body>
-        </html>`;
-        fs.writeFileSync(filePath, html, { encoding: 'utf-8' });
-        return `/certificates/${fileName}`;
+        catch (error) {
+            console.error('Error creating certificate file:', error);
+            throw new Error('Failed to create certificate file');
+        }
     }
     formatCertificateForVerification(certificate) {
         var _a;

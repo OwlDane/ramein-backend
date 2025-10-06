@@ -17,6 +17,8 @@ const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
 const adminAuthRoutes_1 = __importDefault(require("./routes/adminAuthRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
 const certificateRoutes_1 = __importDefault(require("./routes/certificateRoutes"));
+const certificateTemplateRoutes_1 = __importDefault(require("./routes/certificateTemplateRoutes"));
+const statisticsRoutes_1 = __importDefault(require("./routes/statisticsRoutes"));
 const errorHandler_1 = require("./middlewares/errorHandler");
 const sessionTimeout_1 = __importDefault(require("./middlewares/sessionTimeout"));
 dotenv_1.default.config();
@@ -51,6 +53,8 @@ app.use('/api/admin/auth', adminAuthRoutes_1.default);
 app.use('/api/admin', adminRoutes_1.default);
 app.use('/api/files', fileRoutes_1.default);
 app.use('/api/certificates', certificateRoutes_1.default);
+app.use('/api/certificate-templates', certificateTemplateRoutes_1.default);
+app.use('/api/statistics', statisticsRoutes_1.default);
 app.get('/api/health', (_req, res) => {
     res.json({
         status: 'OK',

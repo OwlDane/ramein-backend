@@ -39,6 +39,44 @@ async function runMigrations() {
             console.log('⚠️  Skipped adding category/price columns (might already exist)');
         }
 
+        // Create certificate_template table
+        try {
+            await AppDataSource.query(`
+                CREATE TABLE IF NOT EXISTS "certificate_template" (
+                    "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+                    "name" varchar NOT NULL,
+                    "description" text,
+                    "category" varchar DEFAULT 'custom',
+                    "templateUrl" text NOT NULL,
+                    "thumbnailUrl" text,
+                    "isDefault" boolean DEFAULT false,
+                    "isActive" boolean DEFAULT true,
+                    "placeholders" jsonb,
+                    "settings" jsonb,
+                    "createdBy" varchar,
+                    "createdAt" timestamp NOT NULL DEFAULT now(),
+                    "updatedAt" timestamp NOT NULL DEFAULT now(),
+                    CONSTRAINT "certificate_template_pkey" PRIMARY KEY ("id")
+                );
+            `);
+            console.log('✅ Created certificate_template table');
+        } catch (error) {
+            console.log('⚠️  Skipped creating certificate_template table (might already exist)');
+        }
+
+        // Create indexes for certificate_template
+        try {
+            await AppDataSource.query(`
+                CREATE INDEX IF NOT EXISTS "IDX_certificate_template_category" ON "certificate_template" ("category");
+            `);
+            await AppDataSource.query(`
+                CREATE INDEX IF NOT EXISTS "IDX_certificate_template_isDefault" ON "certificate_template" ("isDefault");
+            `);
+            console.log('✅ Created indexes for certificate_template');
+        } catch (error) {
+            console.log('⚠️  Skipped creating indexes (might already exist)');
+        }
+
         console.log('✅ All migrations completed successfully');
         
         // Close connection

@@ -14,6 +14,7 @@ import adminRoutes from './routes/adminRoutes';
 import adminAuthRoutes from './routes/adminAuthRoutes';
 import fileRoutes from './routes/fileRoutes';
 import certificateRoutes from './routes/certificateRoutes';
+import certificateTemplateRoutes from './routes/certificateTemplateRoutes';
 import statisticsRoutes from './routes/statisticsRoutes';
 
 // Import middleware
@@ -70,6 +71,7 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/certificates', certificateRoutes);
+app.use('/api/certificate-templates', certificateTemplateRoutes);
 app.use('/api/statistics', statisticsRoutes);
 
 // Error handling middleware

@@ -2,10 +2,13 @@ import AppDataSource from '../config/database';
 import { Certificate } from '../entities/Certificate';
 import { Participant } from '../entities/Participant';
 import { Event } from '../entities/Event';
+import { CertificateTemplate } from '../entities/CertificateTemplate';
 import { generateCertificateNumber, generateVerificationCode } from '../utils/certificateGenerator';
 import { cacheService } from './cacheService';
+import PDFGenerationService from './pdfGenerationService';
 import * as fs from 'fs';
 import * as path from 'path';
+import { format } from 'date-fns';
 
 interface CertificateVerificationResult {
     isValid: boolean;
@@ -543,52 +546,50 @@ export class CertificateService {
      * Create certificate file and return its URL
      */
     private async createCertificateFile(participant: Participant, event: Event, certificateNumber: string): Promise<string> {
-        const uploadDir = path.join(__dirname, '../../public/certificates');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        try {
+            // Get template repository
+            const templateRepository = AppDataSource.getRepository(CertificateTemplate);
+            
+            // Try to get default template
+            const template = await templateRepository.findOne({
+                where: { isDefault: true, isActive: true }
+            });
+
+            const uploadDir = path.join(__dirname, '../../uploads/certificates');
+            PDFGenerationService.ensureUploadDir(uploadDir);
+
+            const fileName = PDFGenerationService.generateFilename(certificateNumber);
+            const filePath = path.join(uploadDir, fileName);
+
+            // Prepare certificate data
+            const certificateData = {
+                nama: participant.user?.name || 'Participant',
+                event: event.title,
+                tanggal: format(new Date(event.date), 'dd MMMM yyyy'),
+                nomor_sertifikat: certificateNumber,
+                lokasi: event.location
+            };
+
+            // Generate PDF with template or simple fallback
+            if (template && template.templateUrl && fs.existsSync(template.templateUrl)) {
+                await PDFGenerationService.generateCertificateWithTemplate(
+                    template,
+                    certificateData,
+                    filePath
+                );
+            } else {
+                // Fallback to simple certificate
+                await PDFGenerationService.generateSimpleCertificate(
+                    certificateData,
+                    filePath
+                );
+            }
+
+            return `/uploads/certificates/${fileName}`;
+        } catch (error) {
+            console.error('Error creating certificate file:', error);
+            throw new Error('Failed to create certificate file');
         }
-
-        const fileName = `${certificateNumber}.html`;
-        const filePath = path.join(uploadDir, fileName);
-
-        // Simple HTML certificate template
-        const html = `<!DOCTYPE html>
-        <html>
-        <head>
-            <title>Certificate of Participation</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-                .certificate { border: 2px solid #000; padding: 30px; max-width: 800px; margin: 0 auto; }
-                h1 { color: #2c3e50; }
-                .participant { font-size: 24px; margin: 20px 0; }
-                .event { font-size: 20px; margin: 10px 0; }
-                .date { margin: 20px 0; }
-                .signature { margin-top: 50px; }
-                .verification { font-size: 12px; margin-top: 30px; }
-            </style>
-        </head>
-        <body>
-            <div class="certificate">
-                <h1>CERTIFICATE OF PARTICIPATION</h1>
-                <p>This is to certify that</p>
-                <div class="participant"><strong>${participant.user?.name || 'Participant'}</strong></div>
-                <p>has successfully participated in</p>
-                <div class="event"><strong>${event.title}</strong></div>
-                <div class="date">Issued on: ${new Date().toLocaleDateString()}</div>
-                <div class="signature">
-                    <div>________________________</div>
-                    <div>Authorized Signature</div>
-                </div>
-                <div class="verification">
-                    <p>Certificate ID: ${certificateNumber}</p>
-                    <p>Verify at: ${process.env.APP_URL}/verify/${certificateNumber}</p>
-                </div>
-            </div>
-        </body>
-        </html>`;
-
-        fs.writeFileSync(filePath, html, { encoding: 'utf-8' });
-        return `/certificates/${fileName}`;
     }
 
     /**
