@@ -8,7 +8,7 @@ const database_1 = __importDefault(require("../config/database"));
 const CertificateTemplate_1 = require("../entities/CertificateTemplate");
 const templateRepository = database_1.default.getRepository(CertificateTemplate_1.CertificateTemplate);
 class CertificateTemplateController {
-    static async getAll(req, res) {
+    static async getAll(_req, res) {
         try {
             const templates = await templateRepository.find({
                 where: { isActive: true },
@@ -162,7 +162,7 @@ class CertificateTemplateController {
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengset template default' });
         }
     }
-    static async getDefault(req, res) {
+    static async getDefault(_req, res) {
         try {
             const template = await templateRepository.findOne({
                 where: { isDefault: true, isActive: true }

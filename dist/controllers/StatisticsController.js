@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StatisticsController = void 0;
 const statisticsService_1 = require("../services/statisticsService");
 class StatisticsController {
-    static async getDashboardStats(req, res) {
+    static async getDashboardStats(_req, res) {
         try {
             const stats = await statisticsService_1.StatisticsService.getDashboardStats();
             return res.json(stats);
@@ -15,7 +15,7 @@ class StatisticsController {
             });
         }
     }
-    static async getMonthlyEventsStats(req, res) {
+    static async getMonthlyEventsStats(_req, res) {
         try {
             const stats = await statisticsService_1.StatisticsService.getMonthlyEventsStats();
             return res.json(stats);
@@ -27,7 +27,7 @@ class StatisticsController {
             });
         }
     }
-    static async getMonthlyParticipantsStats(req, res) {
+    static async getMonthlyParticipantsStats(_req, res) {
         try {
             const stats = await statisticsService_1.StatisticsService.getMonthlyParticipantsStats();
             return res.json(stats);
@@ -39,7 +39,7 @@ class StatisticsController {
             });
         }
     }
-    static async getTopEvents(req, res) {
+    static async getTopEvents(_req, res) {
         try {
             const stats = await statisticsService_1.StatisticsService.getTopEvents();
             return res.json(stats);

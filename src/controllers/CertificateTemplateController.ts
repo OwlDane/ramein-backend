@@ -7,7 +7,7 @@ const templateRepository = AppDataSource.getRepository(CertificateTemplate);
 
 export class CertificateTemplateController {
     // Get all templates
-    static async getAll(req: AuthRequest, res: Response) {
+    static async getAll(_req: AuthRequest, res: Response) {
         try {
             const templates = await templateRepository.find({
                 where: { isActive: true },
@@ -189,7 +189,7 @@ export class CertificateTemplateController {
     }
 
     // Get default template
-    static async getDefault(req: AuthRequest, res: Response) {
+    static async getDefault(_req: AuthRequest, res: Response) {
         try {
             const template = await templateRepository.findOne({
                 where: { isDefault: true, isActive: true }

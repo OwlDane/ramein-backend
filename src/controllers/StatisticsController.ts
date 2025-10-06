@@ -5,7 +5,7 @@ export class StatisticsController {
     /**
      * Get all dashboard statistics
      */
-    static async getDashboardStats(req: Request, res: Response) {
+    static async getDashboardStats(_req: Request, res: Response) {
         try {
             const stats = await StatisticsService.getDashboardStats();
             return res.json(stats);
@@ -20,7 +20,7 @@ export class StatisticsController {
     /**
      * Get monthly events statistics
      */
-    static async getMonthlyEventsStats(req: Request, res: Response) {
+    static async getMonthlyEventsStats(_req: Request, res: Response) {
         try {
             const stats = await StatisticsService.getMonthlyEventsStats();
             return res.json(stats);
@@ -35,7 +35,7 @@ export class StatisticsController {
     /**
      * Get monthly participants statistics
      */
-    static async getMonthlyParticipantsStats(req: Request, res: Response) {
+    static async getMonthlyParticipantsStats(_req: Request, res: Response) {
         try {
             const stats = await StatisticsService.getMonthlyParticipantsStats();
             return res.json(stats);
@@ -50,7 +50,7 @@ export class StatisticsController {
     /**
      * Get top 10 events by participant count
      */
-    static async getTopEvents(req: Request, res: Response) {
+    static async getTopEvents(_req: Request, res: Response) {
         try {
             const stats = await StatisticsService.getTopEvents();
             return res.json(stats);

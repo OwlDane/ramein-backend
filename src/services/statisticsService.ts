@@ -1,7 +1,6 @@
 import AppDataSource from '../config/database';
 import { Event } from '../entities/Event';
 import { Participant } from '../entities/Participant';
-import { Between } from 'typeorm';
 
 export class StatisticsService {
     private static eventRepository = AppDataSource.getRepository(Event);
