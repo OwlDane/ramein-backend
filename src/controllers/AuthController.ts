@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendResetPasswordEmail, sendOTPEmail } from '../services/emailService';
 import { generateOTP, isOTPExpired } from '../utils/otpGenerator';
+import { createOrUpdateSession, removeSession } from '../middlewares/sessionTimeout';
 
 // Initialize database connection if not initialized
 const userRepository = AppDataSource.getRepository(User);
@@ -296,6 +297,9 @@ export class AuthController {
                     { expiresIn: '1d' }
                 );
 
+                // Create session for the user
+                createOrUpdateSession(token, user.id);
+
                 await userRepository.save(user);
 
                 return res.json({
@@ -442,6 +446,9 @@ export class AuthController {
                 { expiresIn: '1d' }
             );
 
+            // Create session for the user
+            await createOrUpdateSession(token, user.id);
+
             return res.status(200).json({
                 message: 'Login berhasil',
                 token,
@@ -455,6 +462,25 @@ export class AuthController {
         } catch (error) {
             console.error('Login error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat login' });
+        }
+    }
+
+    // Logout user
+    static async logout(req: Request, res: Response) {
+        try {
+            const token = req.header('Authorization')?.replace('Bearer ', '');
+            if (token) {
+                removeSession(token);
+            }
+            
+            return res.json({ 
+                message: 'Logout berhasil' 
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+            return res.status(500).json({ 
+                message: 'Terjadi kesalahan saat logout' 
+            });
         }
     }
 

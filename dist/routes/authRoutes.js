@@ -23,5 +23,6 @@ router.get('/protected-route', auth_1.auth, requireVerification_1.requireVerific
 });
 router.get('/profile', auth_1.auth, requireVerification_1.requireVerification, AuthController_1.AuthController.getProfile);
 router.patch('/profile', auth_1.auth, requireVerification_1.requireVerification, AuthController_1.AuthController.updateProfile);
+router.post('/logout', auth_1.auth, AuthController_1.AuthController.logout);
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

@@ -33,5 +33,6 @@ router.get('/protected-route', auth, requireVerification, (req, res) => {
 // Additional protected routes you might need
 router.get('/profile', auth, requireVerification, AuthController.getProfile);
 router.patch('/profile', auth, requireVerification, AuthController.updateProfile);
+router.post('/logout', auth, AuthController.logout);
 
 export default router;

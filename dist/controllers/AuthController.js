@@ -43,6 +43,7 @@ const bcrypt = __importStar(require("bcryptjs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const emailService_1 = require("../services/emailService");
 const otpGenerator_1 = require("../utils/otpGenerator");
+const sessionTimeout_1 = require("../middlewares/sessionTimeout");
 const userRepository = database_1.default.getRepository(User_1.User);
 class AuthController {
     static async getProfile(req, res) {
@@ -273,6 +274,7 @@ class AuthController {
                     return res.status(400).json({ message: 'Email belum diverifikasi' });
                 }
                 const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+                (0, sessionTimeout_1.createOrUpdateSession)(token, user.id);
                 await userRepository.save(user);
                 return res.json({
                     message: 'Login berhasil',
@@ -380,6 +382,7 @@ class AuthController {
                 return res.status(401).json({ message: 'Email atau password salah' });
             }
             const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1d' });
+            await (0, sessionTimeout_1.createOrUpdateSession)(token, user.id);
             return res.status(200).json({
                 message: 'Login berhasil',
                 token,
@@ -394,6 +397,24 @@ class AuthController {
         catch (error) {
             console.error('Login error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat login' });
+        }
+    }
+    static async logout(req, res) {
+        var _a;
+        try {
+            const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+            if (token) {
+                (0, sessionTimeout_1.removeSession)(token);
+            }
+            return res.json({
+                message: 'Logout berhasil'
+            });
+        }
+        catch (error) {
+            console.error('Logout error:', error);
+            return res.status(500).json({
+                message: 'Terjadi kesalahan saat logout'
+            });
         }
     }
     static async createAdmin(req, res) {
