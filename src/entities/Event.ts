@@ -39,6 +39,44 @@ export class Event {
     @Column({ default: false })
     isPublished: boolean;
 
+    // New fields - Priority 1
+    @Column({ type: 'int', nullable: true })
+    maxParticipants: number | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    registrationDeadline: Date | null;
+
+    @Column({ type: 'varchar', default: 'offline' })
+    eventType: string; // 'online' | 'offline' | 'hybrid'
+
+    // Contact Person
+    @Column({ type: 'varchar', nullable: true })
+    contactPersonName: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    contactPersonPhone: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    contactPersonEmail: string | null;
+
+    // Meeting Link (for online events)
+    @Column({ type: 'text', nullable: true })
+    meetingLink: string | null;
+
+    // Additional Information
+    @Column({ type: 'text', nullable: true })
+    requirements: string | null;
+
+    @Column({ type: 'text', nullable: true })
+    benefits: string | null;
+
+    // Featured & Tags (Priority 2)
+    @Column({ default: false })
+    isFeatured: boolean;
+
+    @Column({ type: 'simple-array', nullable: true })
+    tags: string[];
+
     @CreateDateColumn()
     createdAt: Date;
 

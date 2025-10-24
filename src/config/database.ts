@@ -6,6 +6,8 @@ import { KategoriKegiatan } from "../entities/KategoriKegiatan";
 import { Certificate } from "../entities/Certificate";
 import { CertificateTemplate } from "../entities/CertificateTemplate";
 import { Transaction } from "../entities/Transaction";
+import { Article } from "../entities/Article";
+import { ArticleCategory } from "../entities/ArticleCategory";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -29,6 +31,8 @@ const databaseConfig: DataSourceOptions = {
     Certificate,
     CertificateTemplate,
     Transaction,
+    Article,
+    ArticleCategory,
   ],
   synchronize: false, // Disable synchronize to prevent conflicts with existing data
   logging: ["error", "warn"],

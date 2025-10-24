@@ -77,6 +77,30 @@ async function runMigrations() {
             console.log('⚠️  Skipped creating indexes (might already exist)');
         }
 
+        // Run article tables migration
+        try {
+            const articleMigrationPath = join(__dirname, 'migrations', '002_create_article_tables.sql');
+            const articleMigrationSQL = readFileSync(articleMigrationPath, 'utf8');
+
+            // Split SQL by semicolon and execute each statement
+            const articleStatements = articleMigrationSQL
+                .split(';')
+                .map(stmt => stmt.trim())
+                .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+
+            for (const statement of articleStatements) {
+                try {
+                    await AppDataSource.query(statement);
+                    console.log('✅ Executed article migration:', statement.substring(0, 50) + '...');
+                } catch (error) {
+                    console.log('⚠️  Skipped article migration (might already exist):', statement.substring(0, 50) + '...');
+                }
+            }
+            console.log('✅ Article tables migration completed');
+        } catch (error) {
+            console.log('⚠️  Article migration file not found or error:', error);
+        }
+
         console.log('✅ All migrations completed successfully');
         
         // Close connection
