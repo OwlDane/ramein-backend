@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.AppDataSource = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("../entities/User");
 const Event_1 = require("../entities/Event");
@@ -40,6 +41,7 @@ const Participant_1 = require("../entities/Participant");
 const KategoriKegiatan_1 = require("../entities/KategoriKegiatan");
 const Certificate_1 = require("../entities/Certificate");
 const CertificateTemplate_1 = require("../entities/CertificateTemplate");
+const Transaction_1 = require("../entities/Transaction");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const databaseConfig = {
@@ -50,9 +52,17 @@ const databaseConfig = {
     password: "HisbBf4tBEnbTInu",
     database: "postgres",
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
     },
-    entities: [User_1.User, Event_1.Event, Participant_1.Participant, KategoriKegiatan_1.KategoriKegiatan, Certificate_1.Certificate, CertificateTemplate_1.CertificateTemplate],
+    entities: [
+        User_1.User,
+        Event_1.Event,
+        Participant_1.Participant,
+        KategoriKegiatan_1.KategoriKegiatan,
+        Certificate_1.Certificate,
+        CertificateTemplate_1.CertificateTemplate,
+        Transaction_1.Transaction,
+    ],
     synchronize: false,
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],
@@ -70,9 +80,10 @@ const databaseConfig = {
         query_timeout: 30000,
         connectionTimeoutMillis: 30000,
         keepAlive: true,
-        keepAliveInitialDelayMillis: 10000
-    }
+        keepAliveInitialDelayMillis: 10000,
+    },
 };
 const AppDataSource = new typeorm_1.DataSource(databaseConfig);
+exports.AppDataSource = AppDataSource;
 exports.default = AppDataSource;
 //# sourceMappingURL=database.js.map

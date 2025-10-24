@@ -26,12 +26,9 @@ const sessionTimeout = (req, res, next) => {
             return next();
         }
         const now = Date.now();
-        const sessionData = sessionStore.get(token);
+        let sessionData = sessionStore.get(token);
         if (!sessionData) {
-            return res.status(401).json({
-                status: 'error',
-                message: 'No active session found. Please login again.'
-            });
+            return next();
         }
         if (now - sessionData.lastActivity > INACTIVITY_TIMEOUT) {
             sessionStore.delete(token);

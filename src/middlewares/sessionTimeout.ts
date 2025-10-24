@@ -39,15 +39,13 @@ export const sessionTimeout = (req: AuthRequest, res: Response, next: NextFuncti
         }
 
         const now = Date.now();
-        const sessionData = sessionStore.get(token);
+        let sessionData = sessionStore.get(token);
 
         // Check if session exists
         if (!sessionData) {
-            // If no session but has token, they need to login again
-            return res.status(401).json({
-                status: 'error',
-                message: 'No active session found. Please login again.'
-            });
+            // If no session but has token, let it pass to authMiddleware for JWT validation
+            // The authMiddleware will validate the token and create a new session if valid
+            return next();
         }
 
         // Check for inactivity timeout
@@ -62,7 +60,6 @@ export const sessionTimeout = (req: AuthRequest, res: Response, next: NextFuncti
         }
 
         // Update last activity timestamp for all authenticated requests
-        // (You can modify this logic based on your requirements)
         sessionData.lastActivity = now;
         sessionStore.set(token, sessionData);
 
