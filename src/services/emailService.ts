@@ -1,116 +1,96 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import { AppError } from './errorService';
-import { google } from 'googleapis';
 
-// Build transporter with either OAuth2 or basic SMTP based on env
-function createTransporter() {
-  const useOAuth2 = String(process.env.SMTP_USE_OAUTH2 || 'false').toLowerCase() === 'true';
+// Initialize email service (Resend for production, Nodemailer for dev)
+const useResend = process.env.USE_RESEND === 'true';
+const resend = useResend ? new Resend(process.env.RESEND_API_KEY) : null;
 
-  if (useOAuth2) {
-    const clientId = process.env.SMTP_OAUTH_CLIENT_ID || '';
-    const clientSecret = process.env.SMTP_OAUTH_CLIENT_SECRET || '';
-    const refreshToken = process.env.SMTP_OAUTH_REFRESH_TOKEN || '';
-    const userEmail = process.env.SMTP_USER || process.env.EMAIL_USER || '';
-
-    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, 'https://developers.google.com/oauthplayground');
-    oauth2Client.setCredentials({ refresh_token: refreshToken });
-
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        type: 'OAuth2',
-        user: userEmail,
-        clientId,
-        clientSecret,
-        refreshToken,
-        // accessToken will be fetched dynamically per send using getAccessToken
-      },
-    } as any);
-  }
-
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = Number(process.env.SMTP_PORT) || 587;
-  const basicUser = process.env.SMTP_USER || process.env.EMAIL_USER;
-  const basicPass = process.env.SMTP_PASS || process.env.EMAIL_PASS;
-
-  // If explicit SMTP host provided, use it.
-  if (smtpHost) {
-    return nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: false,
-      auth: basicUser && basicPass ? { user: basicUser, pass: basicPass } : undefined,
-    } as any);
-  }
-
-  // Simple mode: fall back to Gmail service using EMAIL_USER/EMAIL_PASS
-  return nodemailer.createTransport({
+// Fallback nodemailer for development
+let transporter: any = null;
+if (!useResend) {
+  transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: basicUser,
-      pass: basicPass,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
-  } as any);
+  });
+
+  // Verify transporter on startup
+  (async () => {
+    try {
+      await transporter.verify();
+      console.log('[mail] Nodemailer ready (development mode)');
+    } catch (err) {
+      console.error('[mail] Nodemailer verify failed:', err);
+    }
+  })();
+} else {
+  console.log('[mail] Resend initialized (production mode)');
 }
 
-const transporter = createTransporter();
-
-// Optional: verify transporter on startup
-(async () => {
-  try {
-    await transporter.verify();
-    // eslint-disable-next-line no-console
-    console.log('[mail] transporter verified (OAuth2:', String(process.env.SMTP_USE_OAUTH2 || 'false'), ')');
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('[mail] transporter verify failed:', err);
+// Helper function to send email
+async function sendEmail(to: string, subject: string, html: string) {
+  if (useResend && resend) {
+    // Use Resend (production)
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    
+    try {
+      await resend.emails.send({
+        from: fromEmail,
+        to,
+        subject,
+        html,
+      });
+      console.log(`[mail] Sent via Resend to ${to}`);
+    } catch (error) {
+      console.error('[mail] Resend error:', error);
+      throw new AppError('Gagal mengirim email', 500);
+    }
+  } else if (transporter) {
+    // Use Nodemailer (development)
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to,
+        subject,
+        html,
+      });
+      console.log(`[mail] Sent via Nodemailer to ${to}`);
+    } catch (error) {
+      console.error('[mail] Nodemailer error:', error);
+      throw new AppError('Gagal mengirim email', 500);
+    }
+  } else {
+    throw new AppError('Email service not configured', 500);
   }
-})();
+}
 
 export const sendVerificationEmail = async (email: string, token: string) => {
-  try {
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: 'Verifikasi Email Anda',
-      html: `
-        <h1>Verifikasi Email</h1>
-        <p>Silakan klik link di bawah ini untuk memverifikasi email Anda:</p>
-        <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">
-          Verifikasi Email
-        </a>
-        <p>Link ini akan kadaluarsa dalam 5 menit.</p>
-      `,
-    };
-    // For OAuth2, fetch an access token implicitly via nodemailer
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('SMTP error sendVerificationEmail:', error);
-    throw new AppError('Gagal mengirim email verifikasi', 500);
-  }
+  const html = `
+    <h1>Verifikasi Email</h1>
+    <p>Silakan klik link di bawah ini untuk memverifikasi email Anda:</p>
+    <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">
+      Verifikasi Email
+    </a>
+    <p>Link ini akan kadaluarsa dalam 5 menit.</p>
+  `;
+  
+  await sendEmail(email, 'Verifikasi Email Anda', html);
 };
 
 export const sendResetPasswordEmail = async (email: string, token: string) => {
-  try {
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: 'Reset Password',
-      html: `
-        <h1>Reset Password</h1>
-        <p>Silakan klik link di bawah ini untuk mereset password Anda:</p>
-        <a href="${process.env.FRONTEND_URL}/reset-password?token=${token}">
-          Reset Password
-        </a>
-        <p>Link ini akan kadaluarsa dalam 5 menit.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    throw new AppError('Gagal mengirim email reset password', 500);
-  }
+  const html = `
+    <h1>Reset Password</h1>
+    <p>Silakan klik link di bawah ini untuk mereset password Anda:</p>
+    <a href="${process.env.FRONTEND_URL}/reset-password?token=${token}">
+      Reset Password
+    </a>
+    <p>Link ini akan kadaluarsa dalam 5 menit.</p>
+  `;
+  
+  await sendEmail(email, 'Reset Password', html);
 };
 
 export const sendEventRegistrationEmail = async (
@@ -118,51 +98,30 @@ export const sendEventRegistrationEmail = async (
   eventTitle: string,
   tokenNumber: string
 ) => {
-  try {
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: `Pendaftaran Event: ${eventTitle}`,
-      html: `
-        <h1>Pendaftaran Event Berhasil</h1>
-        <p>Terima kasih telah mendaftar untuk event "${eventTitle}".</p>
-        <p>Berikut adalah token kehadiran Anda:</p>
-        <h2>${tokenNumber}</h2>
-        <p>Simpan token ini baik-baik, Anda akan membutuhkannya untuk mengisi daftar hadir saat event berlangsung.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-  } catch (error) {
-    throw new AppError('Gagal mengirim email konfirmasi pendaftaran', 500);
-  }
-
+  const html = `
+    <h1>Pendaftaran Event Berhasil</h1>
+    <p>Terima kasih telah mendaftar untuk event "${eventTitle}".</p>
+    <p>Berikut adalah token kehadiran Anda:</p>
+    <h2>${tokenNumber}</h2>
+    <p>Simpan token ini baik-baik, Anda akan membutuhkannya untuk mengisi daftar hadir saat event berlangsung.</p>
+  `;
+  
+  await sendEmail(email, `Pendaftaran Event: ${eventTitle}`, html);
 };
 
-// src/services/emailService.ts
 export const sendOTPEmail = async (email: string, otp: string) => {
-  try {
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: 'Your Verification Code',
-      html: `
-        <h1>Verification Code</h1>
-        <p>Your verification code is:</p>
-        <h2>${otp}</h2>
-        <p>This code will expire in 5 minutes.</p>
-        <p>If you didn't request this, please ignore this email.</p>
-      `,
-    };
-    await transporter.sendMail(mailOptions);
-    if ((process.env.NODE_ENV || 'development') !== 'production') {
-      // eslint-disable-next-line no-console
-      console.log('[mail][dev] OTP sent (fallback log):', email, otp);
-    }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('SMTP error sendOTPEmail:', error);
-    throw new AppError('Failed to send OTP email', 500);
+  const html = `
+    <h1>Verification Code</h1>
+    <p>Your verification code is:</p>
+    <h2>${otp}</h2>
+    <p>This code will expire in 5 minutes.</p>
+    <p>If you didn't request this, please ignore this email.</p>
+  `;
+  
+  await sendEmail(email, 'Your Verification Code', html);
+  
+  if ((process.env.NODE_ENV || 'development') !== 'production') {
+    console.log('[mail][dev] OTP sent:', email, otp);
   }
 };
 
@@ -172,87 +131,54 @@ export const sendContactFormEmail = async (
   subject: string,
   message: string
 ) => {
-  try {
-    const adminEmail = process.env.EMAIL_USER;
-    
-    // Email to admin
-    const adminMailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: adminEmail,
-      replyTo: email,
-      subject: `[Contact Form] ${subject}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h2 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">Pesan Baru dari Contact Form</h2>
-          
-          <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-radius: 6px;">
-            <p style="margin: 8px 0;"><strong>Dari:</strong> ${name}</p>
-            <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${email}" style="color: #4F46E5;">${email}</a></p>
-            <p style="margin: 8px 0;"><strong>Subject:</strong> ${subject}</p>
-          </div>
-          
-          <div style="margin: 20px 0; padding: 15px; background-color: #ffffff; border-left: 4px solid #4F46E5;">
-            <h3 style="color: #333; margin-top: 0;">Pesan:</h3>
-            <p style="color: #555; line-height: 1.6; white-space: pre-wrap;">${message}</p>
-          </div>
-          
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
-            <p>Email ini dikirim otomatis dari website Ramein pada ${new Date().toLocaleString('id-ID')}</p>
-            <p>Untuk membalas pesan ini, klik reply atau kirim email langsung ke: ${email}</p>
-          </div>
-        </div>
-      `,
-    };
+  const adminEmail = process.env.EMAIL_USER;
+  
+  // Email to admin
+  const adminHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <h2 style="color: #333; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">Pesan Baru dari Contact Form</h2>
+      <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-radius: 6px;">
+        <p style="margin: 8px 0;"><strong>Dari:</strong> ${name}</p>
+        <p style="margin: 8px 0;"><strong>Email:</strong> <a href="mailto:${email}" style="color: #4F46E5;">${email}</a></p>
+        <p style="margin: 8px 0;"><strong>Subject:</strong> ${subject}</p>
+      </div>
+      <div style="margin: 20px 0; padding: 15px; background-color: #ffffff; border-left: 4px solid #4F46E5;">
+        <h3 style="color: #333; margin-top: 0;">Pesan:</h3>
+        <p style="color: #555; line-height: 1.6; white-space: pre-wrap;">${message}</p>
+      </div>
+      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px;">
+        <p>Email ini dikirim otomatis dari website Ramein pada ${new Date().toLocaleString('id-ID')}</p>
+        <p>Untuk membalas pesan ini, kirim email langsung ke: ${email}</p>
+      </div>
+    </div>
+  `;
 
-    // Email confirmation to sender
-    const userMailOptions: nodemailer.SendMailOptions = {
-      from: process.env.SMTP_USER,
-      to: email,
-      subject: 'Terima kasih telah menghubungi Ramein',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h2 style="color: #4F46E5; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">Terima Kasih telah Menghubungi Kami!</h2>
-          
-          <p style="color: #555; line-height: 1.6;">Halo <strong>${name}</strong>,</p>
-          
-          <p style="color: #555; line-height: 1.6;">
-            Terima kasih telah menghubungi Ramein. Kami telah menerima pesan Anda dan akan segera merespons dalam waktu 1x24 jam.
-          </p>
-          
-          <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-radius: 6px;">
-            <h3 style="color: #333; margin-top: 0;">Ringkasan Pesan Anda:</h3>
-            <p style="margin: 8px 0;"><strong>Subject:</strong> ${subject}</p>
-            <p style="margin: 8px 0;"><strong>Pesan:</strong></p>
-            <p style="color: #555; line-height: 1.6; white-space: pre-wrap; padding: 10px; background-color: #fff; border-left: 3px solid #4F46E5;">${message}</p>
-          </div>
-          
-          <p style="color: #555; line-height: 1.6;">
-            Jika Anda memiliki pertanyaan lebih lanjut, jangan ragu untuk menghubungi kami kembali.
-          </p>
-          
-          <div style="margin-top: 30px; padding: 20px; background-color: #f0f4ff; border-radius: 6px; text-align: center;">
-            <p style="margin: 0; color: #4F46E5; font-weight: bold;">Tim Ramein</p>
-            <p style="margin: 5px 0; color: #666; font-size: 14px;">Event Management System</p>
-          </div>
-          
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0; color: #888; font-size: 12px; text-align: center;">
-            <p>Email ini dikirim otomatis, mohon tidak membalas email ini.</p>
-          </div>
-        </div>
-      `,
-    };
+  // Email confirmation to sender
+  const userHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <h2 style="color: #4F46E5; border-bottom: 2px solid #4F46E5; padding-bottom: 10px;">Terima Kasih telah Menghubungi Kami!</h2>
+      <p style="color: #555; line-height: 1.6;">Halo <strong>${name}</strong>,</p>
+      <p style="color: #555; line-height: 1.6;">
+        Terima kasih telah menghubungi Ramein. Kami telah menerima pesan Anda dan akan segera merespons dalam waktu 1x24 jam.
+      </p>
+      <div style="margin: 20px 0; padding: 15px; background-color: #f9fafb; border-radius: 6px;">
+        <h3 style="color: #333; margin-top: 0;">Ringkasan Pesan Anda:</h3>
+        <p style="margin: 8px 0;"><strong>Subject:</strong> ${subject}</p>
+        <p style="margin: 8px 0;"><strong>Pesan:</strong></p>
+        <p style="color: #555; line-height: 1.6; white-space: pre-wrap; padding: 10px; background-color: #fff; border-left: 3px solid #4F46E5;">${message}</p>
+      </div>
+      <div style="margin-top: 30px; padding: 20px; background-color: #f0f4ff; border-radius: 6px; text-align: center;">
+        <p style="margin: 0; color: #4F46E5; font-weight: bold;">Tim Ramein</p>
+        <p style="margin: 5px 0; color: #666; font-size: 14px;">Event Management System</p>
+      </div>
+    </div>
+  `;
 
-    // Send both emails
-    await transporter.sendMail(adminMailOptions);
-    await transporter.sendMail(userMailOptions);
-
-    if ((process.env.NODE_ENV || 'development') !== 'production') {
-      // eslint-disable-next-line no-console
-      console.log('[mail][dev] Contact form email sent to:', adminEmail, 'from:', email);
-    }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('SMTP error sendContactFormEmail:', error);
-    throw new AppError('Gagal mengirim email contact form', 500);
+  // Send both emails
+  await sendEmail(adminEmail || '', `[Contact Form] ${subject}`, adminHtml);
+  await sendEmail(email, 'Terima kasih telah menghubungi Ramein', userHtml);
+  
+  if ((process.env.NODE_ENV || 'development') !== 'production') {
+    console.log('[mail][dev] Contact form email sent to:', adminEmail, 'from:', email);
   }
 };
