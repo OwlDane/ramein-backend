@@ -10,18 +10,7 @@ interface JwtUserPayload extends JwtPayload {
   role: string;
 }
 
-// Extend Express Request interface globally
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User & {
-        userId: string;
-        role: string;
-      };
-      token?: string;
-    }
-  }
-}
+// Note: Express Request is extended globally in src/types/express.d.ts
 
 export const authMiddleware = async (
   req: Request,

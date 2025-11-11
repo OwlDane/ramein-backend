@@ -1,5 +1,4 @@
-import { Response, NextFunction } from 'express';
-import { AuthRequest } from './auth';
+import { Request, Response, NextFunction } from 'express';
 
 // Define SessionData interface here since it's specific to session management
 interface SessionData {
@@ -30,9 +29,10 @@ export const removeSession = (token: string) => {
 };
 
 // Main session timeout middleware
-export const sessionTimeout = (req: AuthRequest, _res: Response, next: NextFunction) => {
+export const sessionTimeout = (req: Request, _res: Response, next: NextFunction) => {
     try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.replace('Bearer ', '');
 
         if (!token) {
             return next();
