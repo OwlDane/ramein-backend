@@ -12,7 +12,17 @@ interface SessionData {
 // Updated AuthRequest interface to include sessionData
 export interface AuthRequest extends Request {
     user?: any;
-    sessionData?: SessionData;  // Add this property
+    sessionData?: SessionData;
+}
+
+// Declare module augmentation for Express Request
+declare global {
+    namespace Express {
+        interface Request {
+            user?: any;
+            sessionData?: SessionData;
+        }
+    }
 }
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
