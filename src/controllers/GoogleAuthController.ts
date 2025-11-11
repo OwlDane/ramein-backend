@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import AppDataSource from '../config/database';
-import { User } from '../entities/User';
+import { User, UserRole } from '../entities/User';
 import { AppError } from '../services/errorService';
 
 interface GoogleUserInfo {
@@ -48,7 +48,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         profilePicture: picture,
         googleId,
         isVerified: email_verified || true, // Google users are pre-verified
-        role: 'user',
+        role: UserRole.USER,
       });
       await userRepository.save(user);
     } else {
@@ -68,8 +68,8 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, role: user.role },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1d' }
     );
 
     // Return user data and token

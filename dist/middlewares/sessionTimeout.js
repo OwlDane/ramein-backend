@@ -19,9 +19,9 @@ const removeSession = (token) => {
 };
 exports.removeSession = removeSession;
 const sessionTimeout = (req, _res, next) => {
-    var _a;
     try {
-        const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
+        const authHeader = req.headers.authorization;
+        const token = authHeader === null || authHeader === void 0 ? void 0 : authHeader.replace('Bearer ', '');
         if (!token) {
             return next();
         }
