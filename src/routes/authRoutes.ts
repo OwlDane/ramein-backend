@@ -1,6 +1,7 @@
 // authRoutes.ts
 import { Router } from 'express';
 import { AuthController } from '../controllers/AuthController';
+import { googleAuthCallback } from '../controllers/GoogleAuthController';
 import { auth, checkRole } from '../middlewares/auth';
 import { requireVerification } from '../middlewares/requireVerification'; // Fixed import path
 
@@ -9,6 +10,7 @@ const router = Router();
 // Public routes
 router.post('/register', AuthController.register);
 router.post('/login', AuthController.login); // Direct login after verified
+router.post('/google', googleAuthCallback); // Google OAuth login
 // Removed login OTP endpoints as login 2FA is disabled
 // router.post('/request-login-otp', AuthController.requestLoginOTP);
 // router.post('/verify-otp', AuthController.verifyOTP);

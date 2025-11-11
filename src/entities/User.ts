@@ -14,7 +14,7 @@ export class User {
     @Column({ unique: true })
     email: string;
 
-    @Column()
+    @Column({ nullable: true })
     password: string;
 
     @Column()
@@ -55,6 +55,12 @@ export class User {
 
     @Column({ name: "otpCreatedAt", type: 'timestamp', nullable: true })
     otpCreatedAt: Date | null;
+
+    @Column({ name: "googleId", type: 'varchar', nullable: true, unique: true })
+    googleId: string | null;
+
+    @Column({ name: "profilePicture", type: 'varchar', nullable: true })
+    profilePicture: string | null;
 
     @Column({
         type: "enum",
