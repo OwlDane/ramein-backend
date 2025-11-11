@@ -22,6 +22,7 @@ const statisticsRoutes_1 = __importDefault(require("./routes/statisticsRoutes"))
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const articleRoutes_1 = __importDefault(require("./routes/articleRoutes"));
 const testimonialRoutes_1 = __importDefault(require("./routes/testimonialRoutes"));
+const contactRoutes_1 = __importDefault(require("./routes/contactRoutes"));
 const errorHandler_1 = require("./middlewares/errorHandler");
 const sessionTimeout_1 = __importDefault(require("./middlewares/sessionTimeout"));
 dotenv_1.default.config();
@@ -65,6 +66,7 @@ app.use("/api/statistics", statisticsRoutes_1.default);
 app.use("/api/payment", paymentRoutes_1.default);
 app.use("/api/articles", articleRoutes_1.default);
 app.use("/api/testimonials", testimonialRoutes_1.default);
+app.use("/api/contact", contactRoutes_1.default);
 app.get("/api/health", (_req, res) => {
     res.json({
         status: "OK",

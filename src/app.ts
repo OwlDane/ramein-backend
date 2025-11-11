@@ -19,6 +19,7 @@ import statisticsRoutes from "./routes/statisticsRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import articleRoutes from "./routes/articleRoutes";
 import testimonialRoutes from "./routes/testimonialRoutes";
+import contactRoutes from "./routes/contactRoutes";
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -89,6 +90,7 @@ app.use("/api/statistics", statisticsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/articles", articleRoutes);
 app.use("/api/testimonials", testimonialRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Error handling middleware
 
