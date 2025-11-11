@@ -49,13 +49,14 @@ class AdminAuthController {
                 return;
             }
             const adminToken = jsonwebtoken_1.default.sign({
+                userId: admin.id,
                 id: admin.id,
                 email: admin.email,
-                role: 'ADMIN',
+                role: admin.role,
                 isAdmin: true,
                 loginTime: new Date().toISOString()
             }, process.env.JWT_SECRET || 'fallback-secret', {
-                expiresIn: '5m',
+                expiresIn: '12h',
                 issuer: 'ramein-admin'
             });
             (0, sessionTimeout_1.createOrUpdateSession)(adminToken, admin.id);

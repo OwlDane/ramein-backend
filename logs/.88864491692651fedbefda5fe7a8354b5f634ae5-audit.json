@@ -6,11 +6,6 @@
     "auditLog": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/.88864491692651fedbefda5fe7a8354b5f634ae5-audit.json",
     "files": [
         {
-            "date": 1760202834496,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-10-12.log",
-            "hash": "c7640f76c3af47580d54eb3826e479d7e63281e9abf13830f5f4b820ae5c3b1d"
-        },
-        {
             "date": 1760957084235,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-10-20.log",
             "hash": "be3e13c1035b5fe492da38a81d3197dd26087455e415b075d48476ea67a85361"
@@ -44,6 +39,11 @@
             "date": 1762361316967,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-11-05.log",
             "hash": "4e95a64f56fdb2719b66475248f67d162c02a84cbd729bc6bdc68055f7ab640e"
+        },
+        {
+            "date": 1762841080541,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/error-2025-11-11.log",
+            "hash": "caee8578360b56f8722154b7406346515707342bde7c5a2a0f0804204d0f10f8"
         }
     ],
     "hashType": "sha256"

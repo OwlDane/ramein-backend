@@ -20,9 +20,10 @@ const authMiddleware = async (req, res, next) => {
         }
         const token = authHeader.slice(7);
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || "your_jwt_secret");
+        const userId = decoded.userId || decoded.id;
         const userRepository = database_1.default.getRepository(User_1.User);
         const user = await userRepository.findOne({
-            where: { id: decoded.userId },
+            where: { id: userId },
         });
         if (!user) {
             res.status(401).json({

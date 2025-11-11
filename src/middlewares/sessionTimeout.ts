@@ -30,7 +30,7 @@ export const removeSession = (token: string) => {
 };
 
 // Main session timeout middleware
-export const sessionTimeout = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const sessionTimeout = (req: AuthRequest, _res: Response, next: NextFunction) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
 

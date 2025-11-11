@@ -40,6 +40,7 @@ const database_1 = __importDefault(require("./config/database"));
 const User_1 = require("./entities/User");
 const KategoriKegiatan_1 = require("./entities/KategoriKegiatan");
 const Event_1 = require("./entities/Event");
+const Testimonial_1 = require("./entities/Testimonial");
 const bcrypt = __importStar(require("bcryptjs"));
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
@@ -415,6 +416,76 @@ async function seedData() {
         }
         else {
             console.log('⚠️  Admin user not found, skipping event seeding');
+        }
+        const testimonialRepo = database_1.default.getRepository(Testimonial_1.Testimonial);
+        const testimonials = [
+            {
+                name: "Sarah Johnson",
+                role: "Marketing Manager",
+                company: "Tech Innovators Inc",
+                content: "Ramein made organizing our company events incredibly easy! The platform is intuitive and the certificate generation feature saved us hours of work.",
+                avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 1
+            },
+            {
+                name: "Michael Chen",
+                role: "Event Coordinator",
+                company: "StartupHub",
+                content: "Best event management platform I've used. The attendance tracking feature is phenomenal and participants love the automated certificates!",
+                avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 2
+            },
+            {
+                name: "Emily Rodriguez",
+                role: "Community Lead",
+                company: "DevConnect",
+                content: "Ramein transformed how we handle our monthly meetups. Registration is smooth, and the analytics help us understand our audience better.",
+                avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 3
+            },
+            {
+                name: "David Kim",
+                role: "Conference Organizer",
+                company: "TechSummit",
+                content: "From ticketing to certificates, everything works seamlessly. Our attendees appreciate the professional experience Ramein provides.",
+                avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 4
+            },
+            {
+                name: "Lisa Anderson",
+                role: "Training Manager",
+                company: "LearnTech Academy",
+                content: "The platform handles everything from registration to post-event certificates. It's a complete solution that just works!",
+                avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 5
+            },
+            {
+                name: "James Wilson",
+                role: "Workshop Facilitator",
+                company: "SkillBridge",
+                content: "Ramein's user-friendly interface makes event management stress-free. The automated notifications keep everyone informed and engaged.",
+                avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
+                rating: 5,
+                sortOrder: 6
+            }
+        ];
+        for (const testimonialData of testimonials) {
+            const existingTestimonial = await testimonialRepo.findOne({
+                where: { name: testimonialData.name, company: testimonialData.company }
+            });
+            if (!existingTestimonial) {
+                const testimonial = testimonialRepo.create(testimonialData);
+                await testimonialRepo.save(testimonial);
+                console.log(`✅ Testimonial from ${testimonialData.name} created successfully`);
+            }
+            else {
+                console.log(`⚠️  Testimonial from ${testimonialData.name} already exists`);
+            }
         }
         console.log('✅ All seed data completed successfully');
         await database_1.default.destroy();

@@ -4,7 +4,7 @@ import { Testimonial } from '../entities/Testimonial';
 
 export class TestimonialController {
     // Get all active testimonials (public)
-    static getAll = async (req: Request, res: Response) => {
+    static getAll = async (_req: Request, res: Response) => {
         try {
             const testimonialRepo = AppDataSource.getRepository(Testimonial);
             
@@ -13,13 +13,13 @@ export class TestimonialController {
                 order: { sortOrder: 'ASC', createdAt: 'DESC' }
             });
 
-            res.json({
+            return res.json({
                 success: true,
                 data: testimonials
             });
         } catch (error) {
             console.error('Error fetching testimonials:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to fetch testimonials'
             });
@@ -27,7 +27,7 @@ export class TestimonialController {
     };
 
     // Get all testimonials (admin)
-    static getAllAdmin = async (req: Request, res: Response) => {
+    static getAllAdmin = async (_req: Request, res: Response) => {
         try {
             const testimonialRepo = AppDataSource.getRepository(Testimonial);
             
@@ -35,13 +35,13 @@ export class TestimonialController {
                 order: { sortOrder: 'ASC', createdAt: 'DESC' }
             });
 
-            res.json({
+            return res.json({
                 success: true,
                 data: testimonials
             });
         } catch (error) {
             console.error('Error fetching testimonials:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to fetch testimonials'
             });
@@ -63,13 +63,13 @@ export class TestimonialController {
                 });
             }
 
-            res.json({
+            return res.json({
                 success: true,
                 data: testimonial
             });
         } catch (error) {
             console.error('Error fetching testimonial:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to fetch testimonial'
             });
@@ -104,14 +104,14 @@ export class TestimonialController {
 
             const savedTestimonial = await testimonialRepo.save(testimonial);
 
-            res.status(201).json({
+            return res.status(201).json({
                 success: true,
                 message: 'Testimonial created successfully',
                 data: savedTestimonial
             });
         } catch (error) {
             console.error('Error creating testimonial:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to create testimonial'
             });
@@ -147,14 +147,14 @@ export class TestimonialController {
 
             const updatedTestimonial = await testimonialRepo.save(testimonial);
 
-            res.json({
+            return res.json({
                 success: true,
                 message: 'Testimonial updated successfully',
                 data: updatedTestimonial
             });
         } catch (error) {
             console.error('Error updating testimonial:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to update testimonial'
             });
@@ -178,13 +178,13 @@ export class TestimonialController {
 
             await testimonialRepo.remove(testimonial);
 
-            res.json({
+            return res.json({
                 success: true,
                 message: 'Testimonial deleted successfully'
             });
         } catch (error) {
             console.error('Error deleting testimonial:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to delete testimonial'
             });
@@ -209,14 +209,14 @@ export class TestimonialController {
             testimonial.isActive = !testimonial.isActive;
             const updatedTestimonial = await testimonialRepo.save(testimonial);
 
-            res.json({
+            return res.json({
                 success: true,
                 message: `Testimonial ${testimonial.isActive ? 'activated' : 'deactivated'} successfully`,
                 data: updatedTestimonial
             });
         } catch (error) {
             console.error('Error toggling testimonial status:', error);
-            res.status(500).json({
+            return res.status(500).json({
                 success: false,
                 message: 'Failed to toggle testimonial status'
             });

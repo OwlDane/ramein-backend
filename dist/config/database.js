@@ -42,6 +42,9 @@ const KategoriKegiatan_1 = require("../entities/KategoriKegiatan");
 const Certificate_1 = require("../entities/Certificate");
 const CertificateTemplate_1 = require("../entities/CertificateTemplate");
 const Transaction_1 = require("../entities/Transaction");
+const Article_1 = require("../entities/Article");
+const ArticleCategory_1 = require("../entities/ArticleCategory");
+const Testimonial_1 = require("../entities/Testimonial");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const databaseConfig = {
@@ -62,6 +65,9 @@ const databaseConfig = {
         Certificate_1.Certificate,
         CertificateTemplate_1.CertificateTemplate,
         Transaction_1.Transaction,
+        Article_1.Article,
+        ArticleCategory_1.ArticleCategory,
+        Testimonial_1.Testimonial,
     ],
     synchronize: false,
     logging: ["error", "warn"],

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sessionTimeout = exports.removeSession = exports.getSession = exports.createOrUpdateSession = void 0;
 const sessionStore = new Map();
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 const createOrUpdateSession = (token, userId) => {
     sessionStore.set(token, {
         lastActivity: Date.now(),
@@ -18,7 +18,7 @@ const removeSession = (token) => {
     sessionStore.delete(token);
 };
 exports.removeSession = removeSession;
-const sessionTimeout = (req, res, next) => {
+const sessionTimeout = (req, _res, next) => {
     var _a;
     try {
         const token = (_a = req.header('Authorization')) === null || _a === void 0 ? void 0 : _a.replace('Bearer ', '');
@@ -32,11 +32,7 @@ const sessionTimeout = (req, res, next) => {
         }
         if (now - sessionData.lastActivity > INACTIVITY_TIMEOUT) {
             sessionStore.delete(token);
-            return res.status(401).json({
-                status: 'error',
-                message: 'Session expired due to inactivity. Please login again.',
-                code: 'SESSION_EXPIRED'
-            });
+            return next();
         }
         sessionData.lastActivity = now;
         sessionStore.set(token, sessionData);
