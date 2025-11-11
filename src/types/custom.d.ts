@@ -1,10 +1,12 @@
-// Global type definitions for Express
-// This file extends Express Request with custom properties
+// Global type augmentation for Express
+// DO NOT name this file "express.d.ts" as it conflicts with Express module
+
+import { User } from '../entities/User';
 
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: User | any;
       token?: string;
       sessionData?: {
         lastActivity: number;
