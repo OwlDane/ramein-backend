@@ -341,7 +341,7 @@ class CertificateService {
             'Participant Email': `"${cert.participantEmail || ''}"`,
             'Issued At': cert.issuedAt ? cert.issuedAt.toISOString() : '',
             'Status': cert.isRevoked ? 'Revoked' : cert.isVerified ? 'Verified' : 'Pending',
-            'Verification URL': `${process.env.APP_URL || 'http://localhost:3000'}/verify/${cert.certificateNumber}`
+            'Verification URL': `${process.env.APP_URL || process.env.FRONTEND_URL || 'https://your-domain.com'}/verify/${cert.certificateNumber}`
         }));
         return [
             headers.join(','),

@@ -24,7 +24,7 @@ interface CertificateVerificationResult {
         event: {
             id: string;
             title: string;
-            eventDate: Date; // Fixed: changed from 'date' to 'eventDate'
+            eventDate: Date;
         };
         verificationUrl: string;
     };
@@ -478,7 +478,7 @@ export class CertificateService {
             'Participant Email': `"${cert.participantEmail || ''}"`,
             'Issued At': cert.issuedAt ? cert.issuedAt.toISOString() : '',
             'Status': cert.isRevoked ? 'Revoked' : cert.isVerified ? 'Verified' : 'Pending',
-            'Verification URL': `${process.env.APP_URL || 'http://localhost:3000'}/verify/${cert.certificateNumber}`
+            'Verification URL': `${process.env.APP_URL || process.env.FRONTEND_URL || 'https://your-domain.com'}/verify/${cert.certificateNumber}`
         }));
         
         return [

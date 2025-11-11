@@ -27,12 +27,11 @@ const errorHandler_1 = require("./middlewares/errorHandler");
 const sessionTimeout_1 = __importDefault(require("./middlewares/sessionTimeout"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ["http://localhost:3000"];
 app.use((0, cors_1.default)({
-    origin: [
-        "http://localhost:3000",
-        "http://172.16.12.194:3000",
-        "http://127.0.0.1:3000",
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
