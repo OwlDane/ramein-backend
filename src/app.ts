@@ -18,6 +18,7 @@ import certificateTemplateRoutes from "./routes/certificateTemplateRoutes";
 import statisticsRoutes from "./routes/statisticsRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import articleRoutes from "./routes/articleRoutes";
+import testimonialRoutes from "./routes/testimonialRoutes";
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -87,6 +88,7 @@ app.use("/api/certificate-templates", certificateTemplateRoutes);
 app.use("/api/statistics", statisticsRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/articles", articleRoutes);
+app.use("/api/testimonials", testimonialRoutes);
 
 // Error handling middleware
 

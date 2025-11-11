@@ -58,15 +58,16 @@ export class AdminAuthController {
             // Generate admin-specific JWT token
             const adminToken = jwt.sign(
                 { 
-                    id: admin.id, 
+                    userId: admin.id, // Use userId for consistency with authMiddleware
+                    id: admin.id, // Keep id for backward compatibility
                     email: admin.email, 
-                    role: 'ADMIN',
+                    role: admin.role,
                     isAdmin: true,
                     loginTime: new Date().toISOString()
                 },
                 process.env.JWT_SECRET || 'fallback-secret',
                 { 
-                    expiresIn: '5m', // Admin session expires in 5 minutes
+                    expiresIn: '12h', // Admin session expires in 12 hours (full workday)
                     issuer: 'ramein-admin'
                 }
             );

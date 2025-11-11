@@ -6,26 +6,6 @@
     "auditLog": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/.01fedb1a9fd4160bc8f8432883fb52825eea0b79-audit.json",
     "files": [
         {
-            "date": 1760202834492,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-12.log",
-            "hash": "09e8feb7b6884ca0056e7432c5f3c282084fcc2e556e79fdcb5a64709621854b"
-        },
-        {
-            "date": 1760957084231,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-20.log",
-            "hash": "362830f3e36a5da19a34c74d462c0d5958f93254b2a60c83a35adb83b7b23e13"
-        },
-        {
-            "date": 1761026947102,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-21.log",
-            "hash": "d450b40abcddb09f09e6725bbaf764b25c163ccc29a082c3b3d1006e6f83d110"
-        },
-        {
-            "date": 1761090577331,
-            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-22.log",
-            "hash": "65aed4b31a2c58d3deb425a14df2e5343028f885600dcaa6df95030dc2d49910"
-        },
-        {
             "date": 1761267546853,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-24.log",
             "hash": "bcae68de6a96e4805b6d11cfaf5ca75e691deeacd9c779cdf9a8b3482c958335"
@@ -34,6 +14,16 @@
             "date": 1761391233984,
             "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-25.log",
             "hash": "fca6c5ea9ca5c757e7f24243c6b2995d531a135b76a8a9ed700d6aadde2fb572"
+        },
+        {
+            "date": 1761458691092,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-10-26.log",
+            "hash": "acfd0ce223014f910dd26225c382741ad0b79aaa9a9415b96405df820f5c8e68"
+        },
+        {
+            "date": 1762361316965,
+            "name": "/home/zidnae/Dokumen/Code/ramein/ramein-backend/logs/application-2025-11-05.log",
+            "hash": "42c039fb42334f9b2eb4f47b4c272181619d1ca3f03f4138a5ba3d589a06ef0c"
         }
     ],
     "hashType": "sha256"

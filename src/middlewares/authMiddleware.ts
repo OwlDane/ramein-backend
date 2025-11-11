@@ -50,9 +50,12 @@ export const authMiddleware = async (
     ) as JwtUserPayload;
 
     // Get user from database
+    // Support both userId (regular) and id (admin) in JWT payload
+    const userId = decoded.userId || (decoded as any).id;
+    
     const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
-      where: { id: decoded.userId },
+      where: { id: userId },
     });
 
     if (!user) {

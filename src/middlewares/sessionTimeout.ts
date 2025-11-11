@@ -9,7 +9,7 @@ interface SessionData {
 
 // In-memory session store (in production, use Redis or database)
 const sessionStore = new Map<string, SessionData>();
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds (increased for admin)
 
 // Function to create or update a session
 export const createOrUpdateSession = (token: string, userId: string) => {
@@ -45,18 +45,17 @@ export const sessionTimeout = (req: AuthRequest, res: Response, next: NextFuncti
         if (!sessionData) {
             // If no session but has token, let it pass to authMiddleware for JWT validation
             // The authMiddleware will validate the token and create a new session if valid
+            // This handles backend restarts where in-memory sessions are lost
             return next();
         }
 
         // Check for inactivity timeout
         if (now - sessionData.lastActivity > INACTIVITY_TIMEOUT) {
-            // Session expired due to inactivity
+            // Session expired due to inactivity, but let authMiddleware validate JWT first
+            // If JWT is still valid, authMiddleware will create new session
             sessionStore.delete(token);
-            return res.status(401).json({
-                status: 'error',
-                message: 'Session expired due to inactivity. Please login again.',
-                code: 'SESSION_EXPIRED'
-            });
+            // Don't return error here - let authMiddleware handle it
+            return next();
         }
 
         // Update last activity timestamp for all authenticated requests
