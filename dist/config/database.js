@@ -33,7 +33,6 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppDataSource = void 0;
 const typeorm_1 = require("typeorm");
 const User_1 = require("../entities/User");
 const Event_1 = require("../entities/Event");
@@ -72,6 +71,7 @@ const databaseConfig = {
     synchronize: false,
     logging: ["error", "warn"],
     migrations: ["src/config/migrations/*.ts"],
+    migrationsTableName: 'migrations',
     subscribers: [],
     extra: {
         max: 10,
@@ -90,6 +90,5 @@ const databaseConfig = {
     },
 };
 const AppDataSource = new typeorm_1.DataSource(databaseConfig);
-exports.AppDataSource = AppDataSource;
 exports.default = AppDataSource;
 //# sourceMappingURL=database.js.map

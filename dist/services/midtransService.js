@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MidtransService = void 0;
 const midtrans_client_1 = __importDefault(require("midtrans-client"));
-const database_1 = require("../config/database");
+const database_1 = __importDefault(require("../config/database"));
 const Transaction_1 = require("../entities/Transaction");
 const Event_1 = require("../entities/Event");
 const User_1 = require("../entities/User");
@@ -13,10 +13,10 @@ const Participant_1 = require("../entities/Participant");
 const crypto_1 = __importDefault(require("crypto"));
 class MidtransService {
     constructor() {
-        this.transactionRepository = database_1.AppDataSource.getRepository(Transaction_1.Transaction);
-        this.eventRepository = database_1.AppDataSource.getRepository(Event_1.Event);
-        this.userRepository = database_1.AppDataSource.getRepository(User_1.User);
-        this.participantRepository = database_1.AppDataSource.getRepository(Participant_1.Participant);
+        this.transactionRepository = database_1.default.getRepository(Transaction_1.Transaction);
+        this.eventRepository = database_1.default.getRepository(Event_1.Event);
+        this.userRepository = database_1.default.getRepository(User_1.User);
+        this.participantRepository = database_1.default.getRepository(Participant_1.Participant);
         this.snap = new midtrans_client_1.default.Snap({
             isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
             serverKey: process.env.MIDTRANS_SERVER_KEY,

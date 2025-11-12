@@ -85,11 +85,11 @@ __decorate([
     __metadata("design:type", Date)
 ], User.prototype, "otpCreatedAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "googleId", type: 'varchar', nullable: true, unique: true }),
+    (0, typeorm_1.Column)({ type: "varchar", nullable: true, unique: true }),
     __metadata("design:type", String)
 ], User.prototype, "googleId", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "profilePicture", type: 'varchar', nullable: true }),
+    (0, typeorm_1.Column)({ type: "varchar", nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "profilePicture", void 0);
 __decorate([

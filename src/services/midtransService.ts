@@ -1,5 +1,5 @@
 import midtransClient from 'midtrans-client';
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { Transaction, PaymentStatus, PaymentMethod } from '../entities/Transaction';
 import { Event } from '../entities/Event';
 import { User } from '../entities/User';

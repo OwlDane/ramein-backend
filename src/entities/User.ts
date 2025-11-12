@@ -56,10 +56,10 @@ export class User {
     @Column({ name: "otpCreatedAt", type: 'timestamp', nullable: true })
     otpCreatedAt: Date | null;
 
-    @Column({ name: "googleId", type: 'varchar', nullable: true, unique: true })
+    @Column({ type: "varchar", nullable: true, unique: true })
     googleId: string | null;
 
-    @Column({ name: "profilePicture", type: 'varchar', nullable: true })
+    @Column({ type: "varchar", nullable: true })
     profilePicture: string | null;
 
     @Column({

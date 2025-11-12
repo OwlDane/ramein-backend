@@ -39,6 +39,7 @@ const databaseConfig: DataSourceOptions = {
   synchronize: false, // Disable synchronize to prevent conflicts with existing data
   logging: ["error", "warn"],
   migrations: ["src/config/migrations/*.ts"],
+  migrationsTableName: 'migrations',
   subscribers: [],
   extra: {
     // Connection pooler settings
@@ -63,6 +64,5 @@ const databaseConfig: DataSourceOptions = {
 };
 
 const AppDataSource = new DataSource(databaseConfig);
-
-export { AppDataSource };
+  
 export default AppDataSource;
