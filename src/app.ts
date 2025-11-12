@@ -31,16 +31,29 @@ dotenv.config();
 const app = express();
 
 // Security middleware
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
+// Normalize ALLOWED_ORIGINS from env (trim whitespace) and handle CORS checks via function
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : ["http://localhost:3000"];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow non-browser requests (no origin)
+      if (!origin) return callback(null, true);
+
+      // If the origin is explicitly allowed, accept it
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Otherwise log and reject (CORS middleware will not set CORS headers)
+      logger.warn(`CORS origin denied: ${origin}. Allowed: ${allowedOrigins.join(',')}`);
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    // Ensure preflight responses use 200 for broader compatibility
+    optionsSuccessStatus: 200,
   }),
 );
 
