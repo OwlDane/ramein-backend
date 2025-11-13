@@ -205,7 +205,21 @@ npm run test:repo
 
 ## 🚀 Deployment
 
-### Production Build
+### Railway Deployment (Recommended)
+
+```bash
+# Install Railway CLI
+npm install -g @railway/cli
+
+# Login and deploy
+railway login
+railway init
+railway up
+```
+
+See [RAILWAY_DEPLOYMENT.md](../RAILWAY_DEPLOYMENT.md) for detailed instructions.
+
+### Production Build (Manual)
 
 ```bash
 npm run build

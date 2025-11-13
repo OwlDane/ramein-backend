@@ -36,17 +36,38 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : ["http://localhost:3000"];
 
+// Add Railway domain patterns for production
+if (process.env.NODE_ENV === 'production') {
+  // Add Railway public domain if available
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    allowedOrigins.push(`https://${process.env.RAILWAY_PUBLIC_DOMAIN}`);
+  }
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow non-browser requests (no origin)
       if (!origin) return callback(null, true);
 
-      // If the origin is explicitly allowed, accept it
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      // Check string origins first
+      const stringOrigins = allowedOrigins.filter(o => typeof o === 'string') as string[];
+      if (stringOrigins.includes(origin)) return callback(null, true);
+
+      // Check regex patterns for Railway domains
+      if (process.env.NODE_ENV === 'production') {
+        const railwayPatterns = [
+          /^https:\/\/.*\.railway\.app$/,
+          /^https:\/\/.*\.up\.railway\.app$/
+        ];
+        
+        if (railwayPatterns.some(pattern => pattern.test(origin))) {
+          return callback(null, true);
+        }
+      }
 
       // Otherwise log and reject (CORS middleware will not set CORS headers)
-      logger.warn(`CORS origin denied: ${origin}. Allowed: ${allowedOrigins.join(',')}`);
+      logger.warn(`CORS origin denied: ${origin}. Allowed: ${stringOrigins.join(',')}`);
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,

@@ -15,6 +15,7 @@ router.post('/google', googleAuthCallback); // Google OAuth login
 // router.post('/request-login-otp', AuthController.requestLoginOTP);
 // router.post('/verify-otp', AuthController.verifyOTP);
 router.post('/request-verification', AuthController.requestVerification); // For email verification during registration
+router.get('/verify-email/:token', AuthController.verifyEmail); // Email verification endpoint
 router.post('/request-reset-password', AuthController.requestPasswordReset);
 router.post('/reset-password', AuthController.resetPassword);
 
