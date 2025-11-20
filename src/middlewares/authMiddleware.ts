@@ -104,8 +104,8 @@ export const authorize = (allowedRoles: string[] = []) => {
       return;
     }
 
-    // Check role authorization
-    if (allowedRoles.length > 0 && !allowedRoles.includes(req.user.role)) {
+    // Check role authorization (case-insensitive)
+    if (allowedRoles.length > 0 && !allowedRoles.map(r => r.toUpperCase()).includes(req.user.role.toUpperCase())) {
       res.status(403).json({
         success: false,
         error: "Insufficient permissions",

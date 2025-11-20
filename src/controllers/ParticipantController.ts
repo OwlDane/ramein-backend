@@ -5,7 +5,7 @@ import { Event } from '../entities/Event';
 import { Transaction, PaymentStatus } from '../entities/Transaction';
 import { AuthRequest } from '../middlewares/auth';
 import { sendEventRegistrationEmail } from '../services/emailService';
-import { MoreThan, In } from 'typeorm';
+import { In } from 'typeorm';
 import ExportService from '../services/exportService';
 import { certificateService } from '../services/certificateService';
 
@@ -248,19 +248,24 @@ export class ParticipantController {
     // Get user's certificates
     static async getUserCertificates(req: AuthRequest, res: Response) {
         try {
-            const certificates = await participantRepository.find({
-                where: { 
-                    userId: req.user.id,
-                    hasAttended: true,
-                    certificateUrl: MoreThan("") // Only get entries with certificates
-                },
-                relations: ['event'],
-                order: { attendedAt: 'DESC' }
-            });
+            console.log('[getUserCertificates] Fetching certificates for user:', req.user.id);
+            
+            const certificateRepository = AppDataSource.getRepository('Certificate');
+            
+            const certificates = await certificateRepository
+                .createQueryBuilder('certificate')
+                .leftJoinAndSelect('certificate.participant', 'participant')
+                .leftJoinAndSelect('certificate.event', 'event')
+                .leftJoinAndSelect('participant.user', 'user')
+                .where('participant.userId = :userId', { userId: req.user.id })
+                .orderBy('certificate.issuedAt', 'DESC')
+                .getMany();
+
+            console.log('[getUserCertificates] Found certificates:', certificates.length);
 
             return res.json(certificates);
         } catch (error) {
-            console.error('Get certificates error:', error);
+            console.error('[getUserCertificates] Error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil data sertifikat' });
         }
     }

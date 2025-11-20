@@ -69,6 +69,8 @@
     "db:seed:templates": "ts-node src/scripts/seed-certificate-templates.ts",
     "db:seed:articles": "ts-node src/scripts/seed-articles.ts",
     "db:reset-seed": "ts-node src/scripts/reset-and-seed.ts",
+    "test:add-participants": "ts-node src/scripts/add-test-participants.ts",
+    "test:check-certificates": "ts-node src/scripts/check-certificates.ts",
     "db:migrate:gallery": "ts-node src/config/create-gallery-table.ts",
     "db:setup": "npm run db:migrate && npm run db:seed && npm run db:seed:templates && npm run db:seed:articles && npm run db:migrate:gallery",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/config/database.ts",

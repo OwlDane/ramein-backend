@@ -16,19 +16,26 @@ export class CertificateController {
             const { participantId, eventId } = req.body;
             const issuedBy = req.user?.id || 'system';
 
+            console.log('[Certificate] Generating certificate:', { participantId, eventId, issuedBy });
+
             const result = await certificateService.generateCertificate(
                 participantId,
                 eventId,
                 issuedBy
             );
 
+            console.log('[Certificate] Generated successfully:', result);
+
             return res.status(201).json({
                 success: true,
+                message: `Berhasil membuat sertifikat untuk ${result.participantName}`,
                 data: result
             });
         } catch (error: any) {
+            console.error('[Certificate] Generation error:', error);
             return res.status(500).json({
                 success: false,
+                message: error.message || 'Gagal membuat sertifikat',
                 error: error.message || 'Failed to generate certificate'
             });
         }
