@@ -165,6 +165,46 @@ export class ParticipantController {
         }
     }
 
+    // Check if user is registered for specific events
+    static async checkRegistrationStatus(req: AuthRequest, res: Response) {
+        try {
+            const userId = req.user.id;
+            const { eventIds } = req.query;
+
+            if (!eventIds) {
+                return res.status(400).json({ message: 'Event IDs required' });
+            }
+
+            // Parse event IDs (can be comma-separated string or array)
+            const eventIdArray = typeof eventIds === 'string' 
+                ? eventIds.split(',').map(id => id.trim())
+                : Array.isArray(eventIds) 
+                ? eventIds 
+                : [eventIds];
+
+            // Get all registrations for these events
+            const registrations = await participantRepository.find({
+                where: {
+                    userId,
+                    eventId: eventIdArray.length > 0 ? eventIdArray as any : undefined
+                },
+                select: ['eventId', 'id']
+            });
+
+            // Create a map of eventId -> isRegistered
+            const statusMap: Record<string, boolean> = {};
+            eventIdArray.forEach(eventId => {
+                const eventIdStr = String(eventId);
+                statusMap[eventIdStr] = registrations.some(r => r.eventId === eventIdStr);
+            });
+
+            return res.json(statusMap);
+        } catch (error) {
+            console.error('Check registration status error:', error);
+            return res.status(500).json({ message: 'Terjadi kesalahan saat mengecek status pendaftaran' });
+        }
+    }
+
     // Get user's registered events
     static async getUserEvents(req: AuthRequest, res: Response) {
         try {

@@ -8,6 +8,7 @@ router.post('/register', auth_1.auth, ParticipantController_1.ParticipantControl
 router.post('/attendance', auth_1.auth, ParticipantController_1.ParticipantController.markAttendance);
 router.get('/my-events', auth_1.auth, ParticipantController_1.ParticipantController.getUserEvents);
 router.get('/my-certificates', auth_1.auth, ParticipantController_1.ParticipantController.getUserCertificates);
+router.get('/check-registration', auth_1.auth, ParticipantController_1.ParticipantController.checkRegistrationStatus);
 router.get('/event/:eventId/participants', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.getEventParticipants);
 router.post('/certificate/:participantId', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.uploadCertificate);
 router.post('/certificate/:participantId/generate', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), ParticipantController_1.ParticipantController.generateCertificate);

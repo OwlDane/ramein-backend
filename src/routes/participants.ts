@@ -9,6 +9,7 @@ router.post('/register', auth, ParticipantController.register);
 router.post('/attendance', auth, ParticipantController.markAttendance);
 router.get('/my-events', auth, ParticipantController.getUserEvents);
 router.get('/my-certificates', auth, ParticipantController.getUserCertificates);
+router.get('/check-registration', auth, ParticipantController.checkRegistrationStatus);
 
 // Admin routes
 router.get('/event/:eventId/participants', auth, checkRole(['ADMIN']), ParticipantController.getEventParticipants);
