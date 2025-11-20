@@ -131,30 +131,34 @@ class ParticipantController {
         try {
             const userId = req.user.id;
             const { eventIds } = req.query;
+            console.log('📥 Check registration request - userId:', userId, 'eventIds:', eventIds);
             if (!eventIds) {
                 return res.status(400).json({ message: 'Event IDs required' });
             }
             const eventIdArray = typeof eventIds === 'string'
                 ? eventIds.split(',').map(id => id.trim())
                 : Array.isArray(eventIds)
-                    ? eventIds
-                    : [eventIds];
+                    ? eventIds.map(id => String(id).trim())
+                    : [String(eventIds).trim()];
+            console.log('🔍 Parsed event IDs:', eventIdArray);
             const registrations = await participantRepository.find({
                 where: {
                     userId,
-                    eventId: eventIdArray.length > 0 ? eventIdArray : undefined
+                    eventId: (0, typeorm_1.In)(eventIdArray)
                 },
                 select: ['eventId', 'id']
             });
+            console.log('✅ Found registrations:', registrations.length, registrations.map(r => r.eventId));
             const statusMap = {};
             eventIdArray.forEach(eventId => {
                 const eventIdStr = String(eventId);
                 statusMap[eventIdStr] = registrations.some(r => r.eventId === eventIdStr);
             });
+            console.log('📊 Status map:', statusMap);
             return res.json(statusMap);
         }
         catch (error) {
-            console.error('Check registration status error:', error);
+            console.error('❌ Check registration status error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengecek status pendaftaran' });
         }
     }

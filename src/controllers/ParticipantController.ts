@@ -5,7 +5,7 @@ import { Event } from '../entities/Event';
 import { Transaction, PaymentStatus } from '../entities/Transaction';
 import { AuthRequest } from '../middlewares/auth';
 import { sendEventRegistrationEmail } from '../services/emailService';
-import { MoreThan } from 'typeorm';
+import { MoreThan, In } from 'typeorm';
 import ExportService from '../services/exportService';
 import { certificateService } from '../services/certificateService';
 
@@ -171,6 +171,8 @@ export class ParticipantController {
             const userId = req.user.id;
             const { eventIds } = req.query;
 
+            console.log('📥 Check registration request - userId:', userId, 'eventIds:', eventIds);
+
             if (!eventIds) {
                 return res.status(400).json({ message: 'Event IDs required' });
             }
@@ -179,17 +181,21 @@ export class ParticipantController {
             const eventIdArray = typeof eventIds === 'string' 
                 ? eventIds.split(',').map(id => id.trim())
                 : Array.isArray(eventIds) 
-                ? eventIds 
-                : [eventIds];
+                ? eventIds.map(id => String(id).trim())
+                : [String(eventIds).trim()];
 
-            // Get all registrations for these events
+            console.log('🔍 Parsed event IDs:', eventIdArray);
+
+            // Get all registrations for these events using In operator
             const registrations = await participantRepository.find({
                 where: {
                     userId,
-                    eventId: eventIdArray.length > 0 ? eventIdArray as any : undefined
+                    eventId: In(eventIdArray)
                 },
                 select: ['eventId', 'id']
             });
+
+            console.log('✅ Found registrations:', registrations.length, registrations.map(r => r.eventId));
 
             // Create a map of eventId -> isRegistered
             const statusMap: Record<string, boolean> = {};
@@ -198,9 +204,11 @@ export class ParticipantController {
                 statusMap[eventIdStr] = registrations.some(r => r.eventId === eventIdStr);
             });
 
+            console.log('📊 Status map:', statusMap);
+
             return res.json(statusMap);
         } catch (error) {
-            console.error('Check registration status error:', error);
+            console.error('❌ Check registration status error:', error);
             return res.status(500).json({ message: 'Terjadi kesalahan saat mengecek status pendaftaran' });
         }
     }
