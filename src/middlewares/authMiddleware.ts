@@ -117,19 +117,43 @@ export const authorize = (allowedRoles: string[] = []) => {
     }
 
     // Check role authorization (case-insensitive)
-    if (allowedRoles.length > 0 && !allowedRoles.map(r => r.toUpperCase()).includes(req.user.role.toUpperCase())) {
-      console.error('[Auth] Role authorization failed:', {
+    const userRoleUpper = req.user.role.toUpperCase();
+    const allowedRolesUpper = allowedRoles.map(r => r.toUpperCase());
+    const hasPermission = allowedRolesUpper.includes(userRoleUpper);
+    
+    console.log('[Auth] Role check:', {
+      userRole: req.user.role,
+      userRoleUpper,
+      allowedRoles,
+      allowedRolesUpper,
+      hasPermission,
+      userEmail: req.user.email,
+      userId: req.user.id,
+      path: req.path,
+      method: req.method
+    });
+    
+    if (allowedRoles.length > 0 && !hasPermission) {
+      console.error('[Auth] ❌ Role authorization FAILED:', {
         userRole: req.user.role,
+        userRoleUpper,
         allowedRoles,
+        allowedRolesUpper,
         userEmail: req.user.email,
         path: req.path
       });
       res.status(403).json({
         success: false,
         error: "Insufficient permissions",
+        debug: {
+          yourRole: req.user.role,
+          requiredRoles: allowedRoles
+        }
       });
       return;
     }
+    
+    console.log('[Auth] ✅ Role authorization SUCCESS');
 
     next();
   };
