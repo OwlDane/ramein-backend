@@ -72,7 +72,11 @@ const databaseConfig = {
     ],
     synchronize: false,
     logging: ["error", "warn"],
-    migrations: ["src/migrations/*.ts"],
+    migrations: [
+        process.env.NODE_ENV === 'production'
+            ? "dist/migrations/*.js"
+            : "src/migrations/*.ts"
+    ],
     migrationsTableName: 'migrations',
     subscribers: [],
     extra: {

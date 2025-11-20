@@ -339,8 +339,9 @@ class XenditService {
             failed: transactions.filter(t => t.paymentStatus === Transaction_1.PaymentStatus.FAILED).length,
             totalRevenue: transactions
                 .filter(t => t.paymentStatus === Transaction_1.PaymentStatus.PAID)
-                .reduce((sum, t) => sum + t.amount, 0)
+                .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0)
         };
+        console.log('📊 Transaction Statistics:', stats);
         return stats;
     }
     verifyWebhookSignature(payload, signature) {

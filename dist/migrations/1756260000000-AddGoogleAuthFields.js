@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AddGoogleAuthFields1699999999999 = void 0;
+exports.AddGoogleAuthFields1756260000000 = void 0;
 const typeorm_1 = require("typeorm");
-class AddGoogleAuthFields1699999999999 {
+class AddGoogleAuthFields1756260000000 {
     async up(queryRunner) {
         await queryRunner.addColumn("user", new typeorm_1.TableColumn({
             name: "googleId",
@@ -31,5 +31,5 @@ class AddGoogleAuthFields1699999999999 {
         }));
     }
 }
-exports.AddGoogleAuthFields1699999999999 = AddGoogleAuthFields1699999999999;
-//# sourceMappingURL=AddGoogleAuthFields.js.map
+exports.AddGoogleAuthFields1756260000000 = AddGoogleAuthFields1756260000000;
+//# sourceMappingURL=1756260000000-AddGoogleAuthFields.js.map

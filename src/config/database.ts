@@ -40,7 +40,11 @@ const databaseConfig: DataSourceOptions = {
   ],
   synchronize: false, // Disable synchronize to prevent conflicts with existing data
   logging: ["error", "warn"],
-  migrations: ["src/migrations/*.ts"],
+  migrations: [
+    process.env.NODE_ENV === 'production' 
+      ? "dist/migrations/*.js"  // Production: use compiled JS
+      : "src/migrations/*.ts"   // Development: use TS files
+  ],
   migrationsTableName: 'migrations',
   subscribers: [],
   extra: {
