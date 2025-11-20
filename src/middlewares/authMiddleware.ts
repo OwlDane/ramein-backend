@@ -18,10 +18,17 @@ export const authMiddleware = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
+    console.log('[Auth] 🔐 authMiddleware called:', {
+      method: req.method,
+      path: req.path,
+      hasAuthHeader: !!req.headers.authorization
+    });
+    
     // Get token from header - using headers.authorization instead of header()
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log('[Auth] ❌ No token or invalid format');
       res.status(401).json({
         success: false,
         error: "No token provided or invalid format",
@@ -107,8 +114,16 @@ export const authMiddleware = async (
 // Role-based authorization middleware
 export const authorize = (allowedRoles: string[] = []) => {
   return (req: Request, res: Response, next: NextFunction): void => {
+    console.log('[Auth] 🛡️ authorize middleware called:', {
+      method: req.method,
+      path: req.path,
+      allowedRoles,
+      hasUser: !!req.user
+    });
+    
     // Check if user exists (should be set by authMiddleware)
     if (!req.user) {
+      console.log('[Auth] ❌ No user in request');
       res.status(401).json({
         success: false,
         error: "Authentication required",
