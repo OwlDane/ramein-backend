@@ -16,8 +16,8 @@ if (!useResend) {
   } else {
     transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
+      port: 465, // Use port 465 (SSL) instead of 587 (STARTTLS) for Railway
+      secure: true, // true for 465, false for other ports
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -50,7 +50,7 @@ if (!useResend) {
   console.log('[mail] ✅ Resend initialized (production mode)');
 }
 
-// Helper function to send email
+// Helper function to send email with timeout
 async function sendEmail(to: string, subject: string, html: string) {
   console.log(`[mail] Attempting to send email to: ${to}, subject: ${subject}`);
   console.log(`[mail] Using Resend: ${useResend}, Has transporter: ${!!transporter}`);
@@ -73,15 +73,23 @@ async function sendEmail(to: string, subject: string, html: string) {
       throw new AppError(`Gagal mengirim email via Resend: ${error}`, 500);
     }
   } else if (transporter) {
-    // Use Nodemailer (development)
+    // Use Nodemailer with timeout
     try {
       console.log(`[mail] Sending via Nodemailer from: ${process.env.EMAIL_USER}`);
-      const result = await transporter.sendMail({
+      
+      // Add timeout wrapper (10 seconds max)
+      const sendPromise = transporter.sendMail({
         from: process.env.EMAIL_USER,
         to,
         subject,
         html,
       });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Email timeout after 10 seconds')), 10000)
+      );
+      
+      const result = await Promise.race([sendPromise, timeoutPromise]);
       console.log(`[mail] ✅ Sent via Nodemailer to ${to}`, result.messageId);
     } catch (error) {
       console.error('[mail] ❌ Nodemailer error:', error);
@@ -91,12 +99,16 @@ async function sendEmail(to: string, subject: string, html: string) {
         response: error.response,
         responseCode: error.responseCode
       });
-      throw new AppError(`Gagal mengirim email via Nodemailer: ${error.message}`, 500);
+      
+      // Don't throw error, just log it - allow registration to continue
+      console.warn('[mail] ⚠️ Email sending failed, but registration will continue');
+      console.warn('[mail] 💡 User can request verification email resend later');
     }
   } else {
     const errorMsg = 'Email service not configured. Please check USE_RESEND, RESEND_API_KEY, EMAIL_USER, and EMAIL_PASS environment variables.';
     console.error(`[mail] ❌ ${errorMsg}`);
-    throw new AppError(errorMsg, 500);
+    // Don't throw error in production, just log it
+    console.warn('[mail] ⚠️ Email service not available, registration will continue without email');
   }
 }
 

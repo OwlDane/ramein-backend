@@ -18,8 +18,8 @@ if (!useResend) {
     else {
         transporter = nodemailer_1.default.createTransport({
             host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -74,12 +74,14 @@ async function sendEmail(to, subject, html) {
     else if (transporter) {
         try {
             console.log(`[mail] Sending via Nodemailer from: ${process.env.EMAIL_USER}`);
-            const result = await transporter.sendMail({
+            const sendPromise = transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to,
                 subject,
                 html,
             });
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Email timeout after 10 seconds')), 10000));
+            const result = await Promise.race([sendPromise, timeoutPromise]);
             console.log(`[mail] ✅ Sent via Nodemailer to ${to}`, result.messageId);
         }
         catch (error) {
@@ -90,13 +92,14 @@ async function sendEmail(to, subject, html) {
                 response: error.response,
                 responseCode: error.responseCode
             });
-            throw new errorService_1.AppError(`Gagal mengirim email via Nodemailer: ${error.message}`, 500);
+            console.warn('[mail] ⚠️ Email sending failed, but registration will continue');
+            console.warn('[mail] 💡 User can request verification email resend later');
         }
     }
     else {
         const errorMsg = 'Email service not configured. Please check USE_RESEND, RESEND_API_KEY, EMAIL_USER, and EMAIL_PASS environment variables.';
         console.error(`[mail] ❌ ${errorMsg}`);
-        throw new errorService_1.AppError(errorMsg, 500);
+        console.warn('[mail] ⚠️ Email service not available, registration will continue without email');
     }
 }
 const sendVerificationEmail = async (email, token) => {
