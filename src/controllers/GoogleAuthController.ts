@@ -63,6 +63,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         role: UserRole.USER,
       });
       await userRepository.save(user);
+      console.log(`User created: ${user.email}`);
     } else {
       // Update existing user with Google info
       if (!user.googleId) {
@@ -75,6 +76,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         user.isVerified = true;
       }
       await userRepository.save(user);
+      console.log(`User updated: ${user.email}`);
     }
 
     // Generate JWT token
