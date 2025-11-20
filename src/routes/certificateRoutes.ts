@@ -8,6 +8,20 @@ const router = Router();
 // Apply auth middleware to all routes
 router.use(authMiddleware);
 
+// Debug endpoint to check auth
+router.get('/debug-auth', (req, res) => {
+    res.json({
+        authenticated: !!req.user,
+        user: req.user ? {
+            id: req.user.id,
+            email: req.user.email,
+            role: req.user.role,
+            roleType: typeof req.user.role
+        } : null,
+        timestamp: new Date().toISOString()
+    });
+});
+
 // Apply role-based authorization for specific routes
 console.log('[CertificateRoutes] Initializing with roles: ADMIN, ORGANIZER');
 const adminOnly = authorize(['ADMIN']);
