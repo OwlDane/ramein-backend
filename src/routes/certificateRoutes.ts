@@ -23,10 +23,11 @@ router.get('/debug-auth', (req, res) => {
 });
 
 // Apply role-based authorization for specific routes
-console.log('[CertificateRoutes] Initializing with roles: ADMIN, ORGANIZER');
+// IMPORTANT: Using uppercase roles to match UserRole enum (ADMIN, ORGANIZER, USER)
+console.log('[CertificateRoutes] ✅ Initializing with UPPERCASE roles: ADMIN, ORGANIZER');
 const adminOnly = authorize(['ADMIN']);
 const organizerOrAdmin = authorize(['ORGANIZER', 'ADMIN']);
-console.log('[CertificateRoutes] Middleware configured');
+console.log('[CertificateRoutes] ✅ Middleware configured with uppercase roles');
 
 /**
  * @route   POST /api/certificates/generate
