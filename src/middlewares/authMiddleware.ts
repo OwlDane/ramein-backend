@@ -57,10 +57,21 @@ export const authMiddleware = async (
 
     // Attach user and token to request
     // Use role from JWT token if available (for admin tokens), otherwise from database
+    const finalRole = decoded.role || user.role;
+    
+    console.log('[Auth] User authenticated:', {
+      userId: user.id,
+      email: user.email,
+      dbRole: user.role,
+      jwtRole: decoded.role,
+      finalRole,
+      issuer: (decoded as any).iss
+    });
+    
     req.user = {
       ...user,
       userId: user.id,
-      role: decoded.role || user.role,
+      role: finalRole,
     };
     req.token = token;
 
