@@ -9,8 +9,10 @@ const router = Router();
 router.use(authMiddleware);
 
 // Apply role-based authorization for specific routes
+console.log('[CertificateRoutes] Initializing with roles: ADMIN, ORGANIZER');
 const adminOnly = authorize(['ADMIN']);
 const organizerOrAdmin = authorize(['ORGANIZER', 'ADMIN']);
+console.log('[CertificateRoutes] Middleware configured');
 
 /**
  * @route   POST /api/certificates/generate
