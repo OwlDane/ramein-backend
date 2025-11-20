@@ -5,6 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentController = void 0;
 const midtransService_1 = __importDefault(require("../services/midtransService"));
+const database_1 = __importDefault(require("../config/database"));
+const Event_1 = require("../entities/Event");
+const User_1 = require("../entities/User");
 class PaymentController {
     async createTransaction(req, res) {
         var _a;
@@ -388,11 +391,16 @@ class PaymentController {
                 });
                 return;
             }
-            const { AppDataSource } = require('../config/database');
-            const { Event } = require('../entities/Event');
-            const { User } = require('../entities/User');
-            const eventRepository = AppDataSource.getRepository(Event);
-            const userRepository = AppDataSource.getRepository(User);
+            if (!database_1.default.isInitialized) {
+                console.error('AppDataSource is not initialized');
+                res.status(500).json({
+                    success: false,
+                    message: 'Database connection not available'
+                });
+                return;
+            }
+            const eventRepository = database_1.default.getRepository(Event_1.Event);
+            const userRepository = database_1.default.getRepository(User_1.User);
             const event = await eventRepository.findOne({ where: { id: eventId } });
             if (!event) {
                 res.status(404).json({
@@ -410,7 +418,7 @@ class PaymentController {
                 return;
             }
             const amount = Number(event.price);
-            const adminFee = amount === 0 ? 0 : Math.round(Math.max(1000, Math.min(amount * 0.02, 10000)));
+            const adminFee = amount === 0 ? 0 : Math.round(Math.max(1000, amount * 0.015));
             const totalAmount = amount + adminFee;
             res.status(200).json({
                 success: true,
@@ -444,6 +452,23 @@ class PaymentController {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Failed to get payment summary'
+            });
+        }
+    }
+    async testPaymentAPI(_req, res) {
+        try {
+            res.status(200).json({
+                success: true,
+                message: 'Payment API is working',
+                timestamp: new Date().toISOString(),
+                appDataSourceInitialized: database_1.default.isInitialized
+            });
+        }
+        catch (error) {
+            console.error('Test payment API error:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Test failed'
             });
         }
     }

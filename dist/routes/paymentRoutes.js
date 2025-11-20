@@ -7,6 +7,7 @@ const express_1 = require("express");
 const PaymentController_1 = __importDefault(require("../controllers/PaymentController"));
 const middlewares_1 = require("../middlewares");
 const router = (0, express_1.Router)();
+router.get("/test", PaymentController_1.default.testPaymentAPI.bind(PaymentController_1.default));
 router.post("/summary", middlewares_1.authenticate, PaymentController_1.default.getPaymentSummary.bind(PaymentController_1.default));
 router.post("/create", middlewares_1.authenticate, PaymentController_1.default.createTransaction.bind(PaymentController_1.default));
 router.get("/my-transactions", middlewares_1.authenticate, PaymentController_1.default.getMyTransactions.bind(PaymentController_1.default));

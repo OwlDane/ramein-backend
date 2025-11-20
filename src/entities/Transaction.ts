@@ -47,7 +47,7 @@ export class Transaction {
     orderId: string;
 
     @Column({ nullable: true })
-    transactionId: string; // Midtrans transaction ID
+    transactionId: string; // Xendit invoice ID
 
     @Column('decimal', { precision: 10, scale: 2 })
     amount: number;
@@ -73,7 +73,7 @@ export class Transaction {
     paymentMethod: PaymentMethod;
 
     @Column({ nullable: true })
-    paymentType: string; // From Midtrans (bank_transfer, echannel, etc)
+    paymentType: string; // Payment type from Xendit
 
     @Column({ nullable: true })
     vaNumber: string; // Virtual Account Number
@@ -82,10 +82,10 @@ export class Transaction {
     bankName: string; // Bank name for VA
 
     @Column("text", { nullable: true })
-    snapToken: string; // Midtrans Snap token
+    snapToken: string; // Xendit Invoice ID
 
     @Column("text", { nullable: true })
-    snapUrl: string; // Midtrans payment page URL
+    snapUrl: string; // Xendit invoice URL
 
     @Column({ nullable: true })
     paidAt: Date;
@@ -94,7 +94,7 @@ export class Transaction {
     expiredAt: Date;
 
     @Column("jsonb", { nullable: true })
-    midtransResponse: any; // Store full Midtrans response
+    midtransResponse: any; // Store full Xendit response
 
     @Column("text", { nullable: true })
     failureReason: string;

@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
-import midtransService from '../services/midtransService';
+import xenditService from '../services/xenditService';
 import { PaymentStatus } from '../entities/Transaction';
+import AppDataSource from '../config/database';
+import { Event } from '../entities/Event';
+import { User } from '../entities/User';
 
 export class PaymentController {
     /**
@@ -28,12 +31,13 @@ export class PaymentController {
                 return;
             }
 
-            const transaction = await midtransService.createTransaction(userId, eventId);
+            const transaction = await xenditService.createTransaction(userId, eventId);
 
             res.status(201).json({
                 success: true,
                 message: 'Transaction created successfully',
                 data: {
+                    id: transaction.id,
                     transactionId: transaction.id,
                     orderId: transaction.orderId,
                     amount: transaction.amount,
@@ -42,6 +46,8 @@ export class PaymentController {
                     paymentStatus: transaction.paymentStatus,
                     snapToken: transaction.snapToken,
                     snapUrl: transaction.snapUrl,
+                    invoiceUrl: transaction.snapUrl,
+                    invoiceId: transaction.snapToken,
                     expiredAt: transaction.expiredAt
                 }
             });
@@ -71,7 +77,7 @@ export class PaymentController {
                 return;
             }
 
-            const transaction = await midtransService.getTransactionByOrderId(orderId);
+            const transaction = await xenditService.getTransactionByOrderId(orderId);
 
             if (!transaction) {
                 res.status(404).json({
@@ -120,7 +126,7 @@ export class PaymentController {
                 return;
             }
 
-            const transaction = await midtransService.getTransactionById(id);
+            const transaction = await xenditService.getTransactionById(id);
 
             if (!transaction) {
                 res.status(404).json({
@@ -169,7 +175,7 @@ export class PaymentController {
                 return;
             }
 
-            const transaction = await midtransService.checkTransactionStatus(orderId);
+            const transaction = await xenditService.checkTransactionStatus(orderId);
 
             if (!transaction) {
                 res.status(404).json({
@@ -212,7 +218,7 @@ export class PaymentController {
 
             console.log('Received Midtrans notification:', notificationData);
 
-            const transaction = await midtransService.handleNotification(notificationData);
+            const transaction = await xenditService.handleNotification(notificationData);
 
             res.status(200).json({
                 success: true,
@@ -247,7 +253,7 @@ export class PaymentController {
                 return;
             }
 
-            const transactions = await midtransService.getUserTransactions(userId);
+            const transactions = await xenditService.getUserTransactions(userId);
 
             res.status(200).json({
                 success: true,
@@ -290,7 +296,7 @@ export class PaymentController {
                 return;
             }
 
-            const transactions = await midtransService.getEventTransactions(eventId);
+            const transactions = await xenditService.getEventTransactions(eventId);
 
             res.status(200).json({
                 success: true,
@@ -324,7 +330,7 @@ export class PaymentController {
             }
 
             // Get transaction first to check ownership
-            const existingTransaction = await midtransService.getTransactionByOrderId(orderId);
+            const existingTransaction = await xenditService.getTransactionByOrderId(orderId);
 
             if (!existingTransaction) {
                 res.status(404).json({
@@ -343,7 +349,7 @@ export class PaymentController {
                 return;
             }
 
-            const transaction = await midtransService.cancelTransaction(orderId);
+            const transaction = await xenditService.cancelTransaction(orderId);
 
             res.status(200).json({
                 success: true,
@@ -400,7 +406,7 @@ export class PaymentController {
                 filters.offset = parseInt(offset as string);
             }
 
-            const result = await midtransService.getAllTransactions(filters);
+            const result = await xenditService.getAllTransactions(filters);
 
             res.status(200).json({
                 success: true,
@@ -437,7 +443,7 @@ export class PaymentController {
 
             const { eventId } = req.query;
 
-            const statistics = await midtransService.getTransactionStatistics(
+            const statistics = await xenditService.getTransactionStatistics(
                 eventId as string | undefined
             );
 
@@ -479,11 +485,17 @@ export class PaymentController {
                 return;
             }
 
-            // Import repositories
-            const { AppDataSource } = require('../config/database');
-            const { Event } = require('../entities/Event');
-            const { User } = require('../entities/User');
+            // Check if AppDataSource is initialized
+            if (!AppDataSource.isInitialized) {
+                console.error('AppDataSource is not initialized');
+                res.status(500).json({
+                    success: false,
+                    message: 'Database connection not available'
+                });
+                return;
+            }
 
+            // Get repositories
             const eventRepository = AppDataSource.getRepository(Event);
             const userRepository = AppDataSource.getRepository(User);
 
@@ -506,7 +518,7 @@ export class PaymentController {
             }
 
             const amount = Number(event.price);
-            const adminFee = amount === 0 ? 0 : Math.round(Math.max(1000, Math.min(amount * 0.02, 10000)));
+            const adminFee = amount === 0 ? 0 : Math.round(Math.max(1000, amount * 0.015));
             const totalAmount = amount + adminFee;
 
             res.status(200).json({
@@ -540,6 +552,27 @@ export class PaymentController {
             res.status(500).json({
                 success: false,
                 message: error.message || 'Failed to get payment summary'
+            });
+        }
+    }
+
+    /**
+     * Test endpoint to check if payment API is working
+     * GET /api/payment/test
+     */
+    async testPaymentAPI(_req: Request, res: Response): Promise<void> {
+        try {
+            res.status(200).json({
+                success: true,
+                message: 'Payment API is working',
+                timestamp: new Date().toISOString(),
+                appDataSourceInitialized: AppDataSource.isInitialized
+            });
+        } catch (error: any) {
+            console.error('Test payment API error:', error);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Test failed'
             });
         }
     }

@@ -8,6 +8,12 @@ const router = Router();
  * Public routes (with authentication)
  */
 
+// Test endpoint
+router.get(
+  "/test",
+  paymentController.testPaymentAPI.bind(paymentController),
+);
+
 // Get payment summary before checkout
 router.post(
   "/summary",
@@ -36,7 +42,7 @@ router.get(
   paymentController.getTransactionByOrderId.bind(paymentController),
 );
 
-// Check transaction status from Midtrans
+// Check transaction status from Xendit
 router.get(
   "/status/:orderId",
   authenticate,

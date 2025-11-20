@@ -36,8 +36,8 @@ class MidtransService {
     calculateAdminFee(amount) {
         if (amount === 0)
             return 0;
-        const percentage = amount * 0.02;
-        const adminFee = Math.max(1000, Math.min(percentage, 10000));
+        const percentage = amount * 0.015;
+        const adminFee = Math.max(1000, percentage);
         return Math.round(adminFee);
     }
     async createTransaction(userId, eventId) {
@@ -78,9 +78,7 @@ class MidtransService {
             transaction.paymentStatus = Transaction_1.PaymentStatus.PAID;
             transaction.paidAt = new Date();
             transaction.notes = 'Free event - auto approved';
-            const savedTransaction = await this.transactionRepository.save(transaction);
-            await this.createParticipantFromTransaction(savedTransaction);
-            return savedTransaction;
+            return await this.transactionRepository.save(transaction);
         }
         await this.transactionRepository.save(transaction);
         const parameter = {

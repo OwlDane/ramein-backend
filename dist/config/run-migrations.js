@@ -93,6 +93,17 @@ async function runMigrations() {
         catch (error) {
             console.log('⚠️  Article migration file not found or error:', error);
         }
+        try {
+            await database_1.default.query(`
+                ALTER TABLE "user"
+                ADD COLUMN IF NOT EXISTS "googleId" character varying,
+                ADD COLUMN IF NOT EXISTS "profilePicture" character varying;
+            `);
+            console.log('✅ Ensured user.googleId and user.profilePicture columns exist');
+        }
+        catch (error) {
+            console.log('⚠️  Skipped adding googleId/profilePicture columns (might already exist)');
+        }
         console.log('✅ All migrations completed successfully');
         await database_1.default.destroy();
         console.log('✅ Database connection closed');

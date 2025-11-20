@@ -3,6 +3,7 @@ import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import path from "path";
+import multer from "multer";
 import logger from "./utils/logger";
 
 // Import routes
@@ -20,6 +21,7 @@ import paymentRoutes from "./routes/paymentRoutes";
 import articleRoutes from "./routes/articleRoutes";
 import testimonialRoutes from "./routes/testimonialRoutes";
 import contactRoutes from "./routes/contactRoutes";
+import galleryRoutes from "./routes/galleryRoutes";
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -82,6 +84,24 @@ app.use(
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// Multer configuration for file uploads
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (_req, file, cb) => {
+    // Allow image files only
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
+// Apply multer middleware to parse multipart/form-data
+app.use(upload.any());
+
 // Logging middleware
 const morganFormat = process.env.NODE_ENV === "production" ? "combined" : "dev";
 app.use(
@@ -125,6 +145,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/articles", articleRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 // Error handling middleware
 

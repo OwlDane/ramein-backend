@@ -152,7 +152,7 @@ class AuthController {
     }
     static async verifyEmail(req, res) {
         try {
-            const { token } = req.body;
+            const { token } = req.params;
             if (!token) {
                 return res.status(400).json({ message: 'Token verifikasi diperlukan' });
             }

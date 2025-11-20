@@ -9,6 +9,7 @@ import { Transaction } from "../entities/Transaction";
 import { Article } from "../entities/Article";
 import { ArticleCategory } from "../entities/ArticleCategory";
 import { Testimonial } from "../entities/Testimonial";
+import { Gallery } from "../entities/Gallery";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -35,10 +36,11 @@ const databaseConfig: DataSourceOptions = {
     Article,
     ArticleCategory,
     Testimonial,
+    Gallery,
   ],
   synchronize: false, // Disable synchronize to prevent conflicts with existing data
   logging: ["error", "warn"],
-  migrations: ["src/config/migrations/*.ts"],
+  migrations: ["src/migrations/*.ts"],
   migrationsTableName: 'migrations',
   subscribers: [],
   extra: {

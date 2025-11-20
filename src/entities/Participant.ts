@@ -13,7 +13,7 @@ export class Participant {
     @Column()
     eventId: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
     tokenNumber: string;
 
     @Column({ default: false })

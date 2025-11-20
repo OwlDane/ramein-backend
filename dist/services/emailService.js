@@ -11,72 +11,136 @@ const useResend = process.env.USE_RESEND === 'true';
 const resend = useResend ? new resend_1.Resend(process.env.RESEND_API_KEY) : null;
 let transporter = null;
 if (!useResend) {
-    transporter = nodemailer_1.default.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-    });
-    (async () => {
-        try {
-            await transporter.verify();
-            console.log('[mail] Nodemailer ready (development mode)');
-        }
-        catch (err) {
-            console.error('[mail] Nodemailer verify failed:', err);
-        }
-    })();
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.error('[mail] ❌ Gmail credentials not found. Please set EMAIL_USER and EMAIL_PASS environment variables.');
+        console.error('[mail] ℹ️  For Gmail, you need to use an App Password, not your regular password.');
+    }
+    else {
+        transporter = nodemailer_1.default.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+            tls: {
+                rejectUnauthorized: false
+            }
+        });
+        (async () => {
+            try {
+                await transporter.verify();
+                console.log('[mail] ✅ Nodemailer ready (development mode)');
+            }
+            catch (err) {
+                console.error('[mail] ❌ Nodemailer verify failed:', err);
+                console.error('[mail] 💡 Make sure you are using Gmail App Password, not regular password');
+                console.error('[mail] 📖 How to get App Password: https://support.google.com/accounts/answer/185833');
+            }
+        })();
+    }
 }
 else {
-    console.log('[mail] Resend initialized (production mode)');
+    console.log('[mail] ✅ Resend initialized (production mode)');
 }
 async function sendEmail(to, subject, html) {
+    console.log(`[mail] Attempting to send email to: ${to}, subject: ${subject}`);
+    console.log(`[mail] Using Resend: ${useResend}, Has transporter: ${!!transporter}`);
     if (useResend && resend) {
         const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
         try {
-            await resend.emails.send({
+            console.log(`[mail] Sending via Resend from: ${fromEmail}`);
+            const result = await resend.emails.send({
                 from: fromEmail,
                 to,
                 subject,
                 html,
             });
-            console.log(`[mail] Sent via Resend to ${to}`);
+            console.log(`[mail] ✅ Sent via Resend to ${to}`, result);
         }
         catch (error) {
-            console.error('[mail] Resend error:', error);
-            throw new errorService_1.AppError('Gagal mengirim email', 500);
+            console.error('[mail] ❌ Resend error:', error);
+            throw new errorService_1.AppError(`Gagal mengirim email via Resend: ${error}`, 500);
         }
     }
     else if (transporter) {
         try {
-            await transporter.sendMail({
+            console.log(`[mail] Sending via Nodemailer from: ${process.env.EMAIL_USER}`);
+            const result = await transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to,
                 subject,
                 html,
             });
-            console.log(`[mail] Sent via Nodemailer to ${to}`);
+            console.log(`[mail] ✅ Sent via Nodemailer to ${to}`, result.messageId);
         }
         catch (error) {
-            console.error('[mail] Nodemailer error:', error);
-            throw new errorService_1.AppError('Gagal mengirim email', 500);
+            console.error('[mail] ❌ Nodemailer error:', error);
+            console.error('[mail] Nodemailer error details:', {
+                code: error.code,
+                command: error.command,
+                response: error.response,
+                responseCode: error.responseCode
+            });
+            throw new errorService_1.AppError(`Gagal mengirim email via Nodemailer: ${error.message}`, 500);
         }
     }
     else {
-        throw new errorService_1.AppError('Email service not configured', 500);
+        const errorMsg = 'Email service not configured. Please check USE_RESEND, RESEND_API_KEY, EMAIL_USER, and EMAIL_PASS environment variables.';
+        console.error(`[mail] ❌ ${errorMsg}`);
+        throw new errorService_1.AppError(errorMsg, 500);
     }
 }
 const sendVerificationEmail = async (email, token) => {
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
     const html = `
-    <h1>Verifikasi Email</h1>
-    <p>Silakan klik link di bawah ini untuk memverifikasi email Anda:</p>
-    <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">
-      Verifikasi Email
-    </a>
-    <p>Link ini akan kadaluarsa dalam 5 menit.</p>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Verifikasi Email - Ramein</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #4F46E5; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9f9f9; }
+            .button { display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎉 Selamat Datang di Ramein!</h1>
+            </div>
+            <div class="content">
+                <h2>Verifikasi Email Anda</h2>
+                <p>Terima kasih telah mendaftar di Ramein Event Management System!</p>
+                <p>Untuk melengkapi proses registrasi, silakan klik tombol di bawah ini untuk memverifikasi email Anda:</p>
+                
+                <div style="text-align: center;">
+                    <a href="${verificationUrl}" class="button">Verifikasi Email Saya</a>
+                </div>
+                
+                <p>Atau copy dan paste link berikut ke browser Anda:</p>
+                <p style="word-break: break-all; background: #eee; padding: 10px; border-radius: 3px;">
+                    ${verificationUrl}
+                </p>
+                
+                <p><strong>⚠️ Penting:</strong> Link verifikasi ini akan kadaluarsa dalam <strong>5 menit</strong>.</p>
+                <p>Jika Anda tidak mendaftar di Ramein, silakan abaikan email ini.</p>
+            </div>
+            <div class="footer">
+                <p>© 2024 Ramein Event Management System</p>
+                <p>Email ini dikirim secara otomatis, mohon jangan membalas.</p>
+            </div>
+        </div>
+    </body>
+    </html>
   `;
-    await sendEmail(email, 'Verifikasi Email Anda', html);
+    console.log(`[mail] Sending verification email to ${email} with URL: ${verificationUrl}`);
+    await sendEmail(email, '🔐 Verifikasi Email Anda - Ramein', html);
 };
 exports.sendVerificationEmail = sendVerificationEmail;
 const sendResetPasswordEmail = async (email, token) => {

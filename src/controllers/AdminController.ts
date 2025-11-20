@@ -290,7 +290,19 @@ export class AdminController {
                 location, 
                 flyerUrl, 
                 certificateUrl, 
-                categoryId 
+                categoryId,
+                price,
+                maxParticipants,
+                registrationDeadline,
+                eventType,
+                contactPersonName,
+                contactPersonPhone,
+                contactPersonEmail,
+                meetingLink,
+                requirements,
+                benefits,
+                isFeatured,
+                tags
             } = req.body;
 
             // Validate required fields
@@ -326,6 +338,43 @@ export class AdminController {
                 return;
             }
 
+            // Handle file uploads or use URLs
+            let flyerPath = flyerUrl || '';
+            let certificatePath = certificateUrl || null;
+
+            // Get uploaded files from multer
+            const files = (req as any).files || [];
+            const flyerFile = files.find((f: any) => f.fieldname === 'flyerFile');
+            const certificateFile = files.find((f: any) => f.fieldname === 'certificateFile');
+
+            // If flyer file uploaded, save it
+            if (flyerFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'flyers');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `flyer_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(flyerFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, flyerFile.buffer);
+                flyerPath = `uploads/flyers/${filename}`;
+            }
+
+            // If certificate file uploaded, save it
+            if (certificateFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'certificates');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `cert_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(certificateFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, certificateFile.buffer);
+                certificatePath = `uploads/certificates/${filename}`;
+            }
+
             // Create event
             const event = eventRepository.create({
                 title,
@@ -333,9 +382,21 @@ export class AdminController {
                 date: eventDate,
                 time,
                 location,
-                flyer: flyerUrl || '',
-                certificate: certificateUrl || null,
+                flyer: flyerPath,
+                certificate: certificatePath,
                 category: category.nama_kategori,
+                price: price ? parseFloat(price) : 0,
+                maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
+                registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
+                eventType: eventType || 'offline',
+                contactPersonName: contactPersonName || null,
+                contactPersonPhone: contactPersonPhone || null,
+                contactPersonEmail: contactPersonEmail || null,
+                meetingLink: meetingLink || null,
+                requirements: requirements || null,
+                benefits: benefits || null,
+                isFeatured: isFeatured === 'true' || isFeatured === true,
+                tags: tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null,
                 createdBy: req.adminUser?.id
             });
 
@@ -513,7 +574,19 @@ export class AdminController {
                 location, 
                 flyerUrl, 
                 certificateUrl, 
-                categoryId 
+                categoryId,
+                price,
+                maxParticipants,
+                registrationDeadline,
+                eventType,
+                contactPersonName,
+                contactPersonPhone,
+                contactPersonEmail,
+                meetingLink,
+                requirements,
+                benefits,
+                isFeatured,
+                tags
             } = req.body;
 
             const event = await eventRepository.findOne({
@@ -542,14 +615,67 @@ export class AdminController {
                 }
             }
 
+            // Handle file uploads or use URLs
+            let flyerPath = event.flyer;
+            let certificatePath = event.certificate;
+
+            // Get uploaded files from multer
+            const files = (req as any).files || [];
+            const flyerFile = files.find((f: any) => f.fieldname === 'flyerFile');
+            const certificateFile = files.find((f: any) => f.fieldname === 'certificateFile');
+
+            // If flyer file uploaded, save it
+            if (flyerFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'flyers');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `flyer_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(flyerFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, flyerFile.buffer);
+                flyerPath = `uploads/flyers/${filename}`;
+            } else if (flyerUrl !== undefined) {
+                flyerPath = flyerUrl;
+            }
+
+            // If certificate file uploaded, save it
+            if (certificateFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'certificates');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `cert_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(certificateFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, certificateFile.buffer);
+                certificatePath = `uploads/certificates/${filename}`;
+            } else if (certificateUrl !== undefined) {
+                certificatePath = certificateUrl;
+            }
+
             // Update event fields
             if (title) event.title = title;
             if (description) event.description = description;
             if (date) event.date = new Date(date);
             if (time) event.time = time;
             if (location) event.location = location;
-            if (flyerUrl !== undefined) event.flyer = flyerUrl;
-            if (certificateUrl !== undefined) event.certificate = certificateUrl;
+            event.flyer = flyerPath;
+            event.certificate = certificatePath;
+            if (price !== undefined) event.price = parseFloat(price);
+            if (maxParticipants !== undefined) event.maxParticipants = maxParticipants ? parseInt(maxParticipants) : null;
+            if (registrationDeadline !== undefined) event.registrationDeadline = registrationDeadline ? new Date(registrationDeadline) : null;
+            if (eventType !== undefined) event.eventType = eventType;
+            if (contactPersonName !== undefined) event.contactPersonName = contactPersonName;
+            if (contactPersonPhone !== undefined) event.contactPersonPhone = contactPersonPhone;
+            if (contactPersonEmail !== undefined) event.contactPersonEmail = contactPersonEmail;
+            if (meetingLink !== undefined) event.meetingLink = meetingLink;
+            if (requirements !== undefined) event.requirements = requirements;
+            if (benefits !== undefined) event.benefits = benefits;
+            if (isFeatured !== undefined) event.isFeatured = isFeatured === 'true' || isFeatured === true;
+            if (tags !== undefined) event.tags = tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null;
 
             // Update category if provided
             if (categoryId) {

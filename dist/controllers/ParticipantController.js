@@ -7,12 +7,14 @@ exports.ParticipantController = void 0;
 const database_1 = __importDefault(require("../config/database"));
 const Participant_1 = require("../entities/Participant");
 const Event_1 = require("../entities/Event");
+const Transaction_1 = require("../entities/Transaction");
 const emailService_1 = require("../services/emailService");
 const typeorm_1 = require("typeorm");
 const exportService_1 = __importDefault(require("../services/exportService"));
 const certificateService_1 = require("../services/certificateService");
 const participantRepository = database_1.default.getRepository(Participant_1.Participant);
 const eventRepository = database_1.default.getRepository(Event_1.Event);
+const transactionRepository = database_1.default.getRepository(Transaction_1.Transaction);
 class ParticipantController {
     static async register(req, res) {
         try {
@@ -36,6 +38,22 @@ class ParticipantController {
             });
             if (existingRegistration) {
                 return res.status(400).json({ message: 'Anda sudah terdaftar di event ini' });
+            }
+            if (event.price > 0) {
+                const paidTransaction = await transactionRepository.findOne({
+                    where: {
+                        userId,
+                        eventId,
+                        paymentStatus: Transaction_1.PaymentStatus.PAID
+                    }
+                });
+                if (!paidTransaction) {
+                    return res.status(400).json({
+                        message: 'Event berbayar. Silakan lakukan pembayaran terlebih dahulu.',
+                        requiresPayment: true,
+                        eventPrice: event.price
+                    });
+                }
             }
             const tokenNumber = Math.floor(1000000000 + Math.random() * 9000000000).toString();
             const participant = new Participant_1.Participant();

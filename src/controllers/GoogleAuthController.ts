@@ -14,20 +14,28 @@ interface GoogleUserInfo {
 
 export const googleAuthCallback = async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, accessToken } = req.body;
+    const token = idToken || accessToken;
 
-    if (!idToken) {
-      throw new AppError('Access Token is required', 400);
+    if (!token) {
+      throw new AppError('ID Token or Access Token is required', 400);
     }
 
-    // Verify Google access token by calling Google's userinfo endpoint
-    const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`);
-    
+    // Verify Google token by calling Google's tokeninfo endpoint
+    // Try ID token first, then access token
+    let response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${token}`);
+
+    if (!response.ok) {
+      // If ID token verification fails, try with access token
+      response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
+    }
+
     if (!response.ok) {
       throw new AppError('Invalid Google token', 400);
     }
 
     const googleUser = await response.json() as GoogleUserInfo;
+
     
     if (!googleUser || !googleUser.email) {
       throw new AppError('Invalid Google user data', 400);
@@ -45,9 +53,13 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         email,
         name: name || email.split('@')[0],
         password: '', // No password for OAuth users
+        phone: '', // Will be filled later by user
+        address: '', // Will be filled later by user
+        education: '', // Will be filled later by user
         profilePicture: picture,
         googleId,
         isVerified: email_verified || true, // Google users are pre-verified
+        isEmailVerified: email_verified || true,
         role: UserRole.USER,
       });
       await userRepository.save(user);
@@ -66,7 +78,7 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign(
+    const jwtToken = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1d' }
@@ -76,16 +88,14 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
     res.json({
       success: true,
       message: 'Google login successful',
-      data: {
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          profilePicture: user.profilePicture,
-          isVerified: user.isVerified,
-        },
+      token: jwtToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        profilePicture: user.profilePicture,
+        isVerified: user.isVerified,
       },
     });
   } catch (error) {
@@ -96,9 +106,11 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
         message: error.message,
       });
     } else {
+      console.error('Detailed error:', error);
       res.status(500).json({
         success: false,
         message: 'Google authentication failed',
+        error: process.env.NODE_ENV === 'development' ? String(error) : undefined,
       });
     }
   }

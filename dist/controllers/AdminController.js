@@ -239,7 +239,7 @@ class AdminController {
     static async createEvent(req, res) {
         var _a, _b;
         try {
-            const { title, description, date, time, location, flyerUrl, certificateUrl, categoryId } = req.body;
+            const { title, description, date, time, location, flyerUrl, certificateUrl, categoryId, price, maxParticipants, registrationDeadline, eventType, contactPersonName, contactPersonPhone, contactPersonEmail, meetingLink, requirements, benefits, isFeatured, tags } = req.body;
             if (!title || !description || !date || !time || !location || !categoryId) {
                 res.status(400).json({
                     message: 'Semua field wajib diisi'
@@ -265,15 +265,56 @@ class AdminController {
                 });
                 return;
             }
+            let flyerPath = flyerUrl || '';
+            let certificatePath = certificateUrl || null;
+            const files = req.files || [];
+            const flyerFile = files.find((f) => f.fieldname === 'flyerFile');
+            const certificateFile = files.find((f) => f.fieldname === 'certificateFile');
+            if (flyerFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'flyers');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `flyer_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(flyerFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, flyerFile.buffer);
+                flyerPath = `uploads/flyers/${filename}`;
+            }
+            if (certificateFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'certificates');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `cert_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(certificateFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, certificateFile.buffer);
+                certificatePath = `uploads/certificates/${filename}`;
+            }
             const event = eventRepository.create({
                 title,
                 description,
                 date: eventDate,
                 time,
                 location,
-                flyer: flyerUrl || '',
-                certificate: certificateUrl || null,
+                flyer: flyerPath,
+                certificate: certificatePath,
                 category: category.nama_kategori,
+                price: price ? parseFloat(price) : 0,
+                maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
+                registrationDeadline: registrationDeadline ? new Date(registrationDeadline) : null,
+                eventType: eventType || 'offline',
+                contactPersonName: contactPersonName || null,
+                contactPersonPhone: contactPersonPhone || null,
+                contactPersonEmail: contactPersonEmail || null,
+                meetingLink: meetingLink || null,
+                requirements: requirements || null,
+                benefits: benefits || null,
+                isFeatured: isFeatured === 'true' || isFeatured === true,
+                tags: tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null,
                 createdBy: (_a = req.adminUser) === null || _a === void 0 ? void 0 : _a.id
             });
             const savedEvent = await eventRepository.save(event);
@@ -415,7 +456,7 @@ class AdminController {
         var _a;
         try {
             const { id } = req.params;
-            const { title, description, date, time, location, flyerUrl, certificateUrl, categoryId } = req.body;
+            const { title, description, date, time, location, flyerUrl, certificateUrl, categoryId, price, maxParticipants, registrationDeadline, eventType, contactPersonName, contactPersonPhone, contactPersonEmail, meetingLink, requirements, benefits, isFeatured, tags } = req.body;
             const event = await eventRepository.findOne({
                 where: { id }
             });
@@ -437,6 +478,41 @@ class AdminController {
                     return;
                 }
             }
+            let flyerPath = event.flyer;
+            let certificatePath = event.certificate;
+            const files = req.files || [];
+            const flyerFile = files.find((f) => f.fieldname === 'flyerFile');
+            const certificateFile = files.find((f) => f.fieldname === 'certificateFile');
+            if (flyerFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'flyers');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `flyer_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(flyerFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, flyerFile.buffer);
+                flyerPath = `uploads/flyers/${filename}`;
+            }
+            else if (flyerUrl !== undefined) {
+                flyerPath = flyerUrl;
+            }
+            if (certificateFile) {
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'uploads', 'certificates');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+                const filename = `cert_${Date.now()}_${Math.random().toString(36).substring(7)}${path.extname(certificateFile.originalname)}`;
+                const filepath = path.join(uploadDir, filename);
+                fs.writeFileSync(filepath, certificateFile.buffer);
+                certificatePath = `uploads/certificates/${filename}`;
+            }
+            else if (certificateUrl !== undefined) {
+                certificatePath = certificateUrl;
+            }
             if (title)
                 event.title = title;
             if (description)
@@ -447,10 +523,32 @@ class AdminController {
                 event.time = time;
             if (location)
                 event.location = location;
-            if (flyerUrl !== undefined)
-                event.flyer = flyerUrl;
-            if (certificateUrl !== undefined)
-                event.certificate = certificateUrl;
+            event.flyer = flyerPath;
+            event.certificate = certificatePath;
+            if (price !== undefined)
+                event.price = parseFloat(price);
+            if (maxParticipants !== undefined)
+                event.maxParticipants = maxParticipants ? parseInt(maxParticipants) : null;
+            if (registrationDeadline !== undefined)
+                event.registrationDeadline = registrationDeadline ? new Date(registrationDeadline) : null;
+            if (eventType !== undefined)
+                event.eventType = eventType;
+            if (contactPersonName !== undefined)
+                event.contactPersonName = contactPersonName;
+            if (contactPersonPhone !== undefined)
+                event.contactPersonPhone = contactPersonPhone;
+            if (contactPersonEmail !== undefined)
+                event.contactPersonEmail = contactPersonEmail;
+            if (meetingLink !== undefined)
+                event.meetingLink = meetingLink;
+            if (requirements !== undefined)
+                event.requirements = requirements;
+            if (benefits !== undefined)
+                event.benefits = benefits;
+            if (isFeatured !== undefined)
+                event.isFeatured = isFeatured === 'true' || isFeatured === true;
+            if (tags !== undefined)
+                event.tags = tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null;
             if (categoryId) {
                 const category = await categoryRepository.findOne({
                     where: { id: categoryId }

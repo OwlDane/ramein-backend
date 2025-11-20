@@ -2,6 +2,7 @@ import { Response } from 'express';
 import AppDataSource from '../config/database';
 import { Participant } from '../entities/Participant';
 import { Event } from '../entities/Event';
+import { Transaction, PaymentStatus } from '../entities/Transaction';
 import { AuthRequest } from '../middlewares/auth';
 import { sendEventRegistrationEmail } from '../services/emailService';
 import { MoreThan } from 'typeorm';
@@ -10,6 +11,7 @@ import { certificateService } from '../services/certificateService';
 
 const participantRepository = AppDataSource.getRepository(Participant);
 const eventRepository = AppDataSource.getRepository(Event);
+const transactionRepository = AppDataSource.getRepository(Transaction);
 
 export class ParticipantController {
     // Register for an event
@@ -44,6 +46,25 @@ export class ParticipantController {
 
             if (existingRegistration) {
                 return res.status(400).json({ message: 'Anda sudah terdaftar di event ini' });
+            }
+
+            // For paid events, check if payment is completed
+            if (event.price > 0) {
+                const paidTransaction = await transactionRepository.findOne({
+                    where: {
+                        userId,
+                        eventId,
+                        paymentStatus: PaymentStatus.PAID
+                    }
+                });
+
+                if (!paidTransaction) {
+                    return res.status(400).json({ 
+                        message: 'Event berbayar. Silakan lakukan pembayaran terlebih dahulu.',
+                        requiresPayment: true,
+                        eventPrice: event.price
+                    });
+                }
             }
 
             // Generate 10-digit token number

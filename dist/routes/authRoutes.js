@@ -10,6 +10,7 @@ router.post('/register', AuthController_1.AuthController.register);
 router.post('/login', AuthController_1.AuthController.login);
 router.post('/google', GoogleAuthController_1.googleAuthCallback);
 router.post('/request-verification', AuthController_1.AuthController.requestVerification);
+router.get('/verify-email/:token', AuthController_1.AuthController.verifyEmail);
 router.post('/request-reset-password', AuthController_1.AuthController.requestPasswordReset);
 router.post('/reset-password', AuthController_1.AuthController.resetPassword);
 router.post('/create-admin', auth_1.auth, (0, auth_1.checkRole)(['ADMIN']), AuthController_1.AuthController.createAdmin);
