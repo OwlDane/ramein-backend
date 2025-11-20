@@ -56,15 +56,24 @@ export class AdminAuthController {
             }
 
             // Generate admin-specific JWT token
+            const tokenPayload = { 
+                userId: admin.id, // Use userId for consistency with authMiddleware
+                id: admin.id, // Keep id for backward compatibility
+                email: admin.email, 
+                role: admin.role,
+                isAdmin: true,
+                loginTime: new Date().toISOString()
+            };
+            
+            logger.info(`[AdminAuth] Generating token for admin:`, {
+                email: admin.email,
+                role: admin.role,
+                roleType: typeof admin.role,
+                userId: admin.id
+            });
+            
             const adminToken = jwt.sign(
-                { 
-                    userId: admin.id, // Use userId for consistency with authMiddleware
-                    id: admin.id, // Keep id for backward compatibility
-                    email: admin.email, 
-                    role: admin.role,
-                    isAdmin: true,
-                    loginTime: new Date().toISOString()
-                },
+                tokenPayload,
                 process.env.JWT_SECRET || 'fallback-secret',
                 { 
                     expiresIn: '12h', // Admin session expires in 12 hours (full workday)
