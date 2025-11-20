@@ -56,10 +56,11 @@ export const authMiddleware = async (
     }
 
     // Attach user and token to request
+    // Use role from JWT token if available (for admin tokens), otherwise from database
     req.user = {
       ...user,
       userId: user.id,
-      role: user.role,
+      role: decoded.role || user.role,
     };
     req.token = token;
 
@@ -106,6 +107,12 @@ export const authorize = (allowedRoles: string[] = []) => {
 
     // Check role authorization (case-insensitive)
     if (allowedRoles.length > 0 && !allowedRoles.map(r => r.toUpperCase()).includes(req.user.role.toUpperCase())) {
+      console.error('[Auth] Role authorization failed:', {
+        userRole: req.user.role,
+        allowedRoles,
+        userEmail: req.user.email,
+        path: req.path
+      });
       res.status(403).json({
         success: false,
         error: "Insufficient permissions",
