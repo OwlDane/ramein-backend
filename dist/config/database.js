@@ -44,6 +44,7 @@ const Transaction_1 = require("../entities/Transaction");
 const Article_1 = require("../entities/Article");
 const ArticleCategory_1 = require("../entities/ArticleCategory");
 const Testimonial_1 = require("../entities/Testimonial");
+const Gallery_1 = require("../entities/Gallery");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const databaseConfig = {
@@ -67,10 +68,11 @@ const databaseConfig = {
         Article_1.Article,
         ArticleCategory_1.ArticleCategory,
         Testimonial_1.Testimonial,
+        Gallery_1.Gallery,
     ],
     synchronize: false,
     logging: ["error", "warn"],
-    migrations: ["src/config/migrations/*.ts"],
+    migrations: ["src/migrations/*.ts"],
     migrationsTableName: 'migrations',
     subscribers: [],
     extra: {

@@ -24,6 +24,7 @@ const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const articleRoutes_1 = __importDefault(require("./routes/articleRoutes"));
 const testimonialRoutes_1 = __importDefault(require("./routes/testimonialRoutes"));
 const contactRoutes_1 = __importDefault(require("./routes/contactRoutes"));
+const galleryRoutes_1 = __importDefault(require("./routes/galleryRoutes"));
 const errorHandler_1 = require("./middlewares/errorHandler");
 const sessionTimeout_1 = __importDefault(require("./middlewares/sessionTimeout"));
 dotenv_1.default.config();
@@ -66,7 +67,7 @@ const storage = multer_1.default.memoryStorage();
 const upload = (0, multer_1.default)({
     storage,
     limits: { fileSize: 10 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
+    fileFilter: (_req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         }
@@ -104,6 +105,7 @@ app.use("/api/payment", paymentRoutes_1.default);
 app.use("/api/articles", articleRoutes_1.default);
 app.use("/api/testimonials", testimonialRoutes_1.default);
 app.use("/api/contact", contactRoutes_1.default);
+app.use("/api/gallery", galleryRoutes_1.default);
 app.get("/api/health", (_req, res) => {
     res.json({
         status: "OK",

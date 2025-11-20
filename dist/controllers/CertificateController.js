@@ -186,6 +186,43 @@ class CertificateController {
             });
         }
     }
+    async generateBulkCertificates(req, res) {
+        var _a;
+        try {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
+            const { eventId, participantIds } = req.body;
+            const issuedBy = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.id) || 'system';
+            const results = {
+                generated: 0,
+                failed: 0,
+                errors: []
+            };
+            for (const participantId of participantIds) {
+                try {
+                    await certificateService_1.certificateService.generateCertificate(participantId, eventId, issuedBy);
+                    results.generated++;
+                }
+                catch (error) {
+                    results.failed++;
+                    results.errors.push(`Participant ${participantId}: ${error.message}`);
+                }
+            }
+            return res.status(201).json({
+                success: true,
+                data: results,
+                message: `Generated ${results.generated} certificates, ${results.failed} failed`
+            });
+        }
+        catch (error) {
+            return res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to generate bulk certificates'
+            });
+        }
+    }
 }
 exports.CertificateController = CertificateController;
 exports.certificateController = new CertificateController();

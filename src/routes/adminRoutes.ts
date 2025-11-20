@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/AdminController';
+import { FinancialController } from '../controllers/FinancialController';
 import { adminAuth } from '../middlewares/adminAuth';
 
 const router = Router();
@@ -9,6 +10,7 @@ router.use(adminAuth);
 
 // Dashboard routes
 router.get('/dashboard/stats', AdminController.getDashboardStats);
+router.get('/dashboard/financial', FinancialController.getFinancialAnalytics);
 router.get('/dashboard/export', AdminController.exportDashboardData);
 
 // Event management routes

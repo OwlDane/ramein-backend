@@ -9,60 +9,60 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Participant = void 0;
+exports.Gallery = void 0;
 const typeorm_1 = require("typeorm");
-const User_1 = require("./User");
-const Event_1 = require("./Event");
-let Participant = class Participant {
+let Gallery = class Gallery {
 };
-exports.Participant = Participant;
+exports.Gallery = Gallery;
 __decorate([
     (0, typeorm_1.PrimaryGeneratedColumn)("uuid"),
     __metadata("design:type", String)
-], Participant.prototype, "id", void 0);
+], Gallery.prototype, "id", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
-], Participant.prototype, "userId", void 0);
+], Gallery.prototype, "title", void 0);
+__decorate([
+    (0, typeorm_1.Column)("text"),
+    __metadata("design:type", String)
+], Gallery.prototype, "description", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", Date)
+], Gallery.prototype, "date", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
-], Participant.prototype, "eventId", void 0);
+], Gallery.prototype, "location", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ unique: true, nullable: true }),
+    (0, typeorm_1.Column)("text"),
     __metadata("design:type", String)
-], Participant.prototype, "tokenNumber", void 0);
+], Gallery.prototype, "image", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'int', default: 0 }),
+    __metadata("design:type", Number)
+], Gallery.prototype, "participants", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    __metadata("design:type", String)
+], Gallery.prototype, "category", void 0);
+__decorate([
+    (0, typeorm_1.Column)(),
+    __metadata("design:type", String)
+], Gallery.prototype, "createdBy", void 0);
 __decorate([
     (0, typeorm_1.Column)({ default: false }),
     __metadata("design:type", Boolean)
-], Participant.prototype, "hasAttended", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", Date)
-], Participant.prototype, "attendedAt", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ nullable: true }),
-    __metadata("design:type", String)
-], Participant.prototype, "certificateUrl", void 0);
+], Gallery.prototype, "isPublished", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
-], Participant.prototype, "createdAt", void 0);
+], Gallery.prototype, "createdAt", void 0);
 __decorate([
     (0, typeorm_1.UpdateDateColumn)(),
     __metadata("design:type", Date)
-], Participant.prototype, "updatedAt", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => User_1.User, user => user.participants),
-    (0, typeorm_1.JoinColumn)({ name: "userId" }),
-    __metadata("design:type", User_1.User)
-], Participant.prototype, "user", void 0);
-__decorate([
-    (0, typeorm_1.ManyToOne)(() => Event_1.Event, event => event.participants),
-    (0, typeorm_1.JoinColumn)({ name: "eventId" }),
-    __metadata("design:type", Event_1.Event)
-], Participant.prototype, "event", void 0);
-exports.Participant = Participant = __decorate([
+], Gallery.prototype, "updatedAt", void 0);
+exports.Gallery = Gallery = __decorate([
     (0, typeorm_1.Entity)()
-], Participant);
-//# sourceMappingURL=Participant.js.map
+], Gallery);
+//# sourceMappingURL=Gallery.js.map

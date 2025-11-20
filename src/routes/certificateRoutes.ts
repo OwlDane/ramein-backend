@@ -13,18 +13,34 @@ const adminOnly = authorize(['admin']);
 const organizerOrAdmin = authorize(['organizer', 'admin']);
 
 /**
- * @route   POST /api/certificates
+ * @route   POST /api/certificates/generate
  * @desc    Generate a new certificate
  * @access  Private (Admin/Organizer)
  */
 router.post(
-    '/',
+    '/generate',
     [
         body('participantId').isUUID().withMessage('Valid participant ID is required'),
         body('eventId').isUUID().withMessage('Valid event ID is required')
     ],
     organizerOrAdmin,
     certificateController.generateCertificate
+);
+
+/**
+ * @route   POST /api/certificates/generate-bulk
+ * @desc    Generate certificates for multiple participants
+ * @access  Private (Admin/Organizer)
+ */
+router.post(
+    '/generate-bulk',
+    [
+        body('eventId').isUUID().withMessage('Valid event ID is required'),
+        body('participantIds').isArray().withMessage('Participant IDs must be an array'),
+        body('participantIds.*').isUUID().withMessage('Each participant ID must be valid')
+    ],
+    organizerOrAdmin,
+    certificateController.generateBulkCertificates
 );
 
 /**

@@ -260,6 +260,52 @@ export class CertificateController {
             });
         }
     }
+
+    /**
+     * Generate certificates for multiple participants
+     */
+    async generateBulkCertificates(req: Request, res: Response): Promise<Response> {
+        try {
+            const errors = validationResult(req);
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ errors: errors.array() });
+            }
+
+            const { eventId, participantIds } = req.body;
+            const issuedBy = req.user?.id || 'system';
+
+            const results = {
+                generated: 0,
+                failed: 0,
+                errors: [] as string[]
+            };
+
+            for (const participantId of participantIds) {
+                try {
+                    await certificateService.generateCertificate(
+                        participantId,
+                        eventId,
+                        issuedBy
+                    );
+                    results.generated++;
+                } catch (error: any) {
+                    results.failed++;
+                    results.errors.push(`Participant ${participantId}: ${error.message}`);
+                }
+            }
+
+            return res.status(201).json({
+                success: true,
+                data: results,
+                message: `Generated ${results.generated} certificates, ${results.failed} failed`
+            });
+        } catch (error: any) {
+            return res.status(500).json({
+                success: false,
+                error: error.message || 'Failed to generate bulk certificates'
+            });
+        }
+    }
 }
 
 export const certificateController = new CertificateController();

@@ -1,124 +1,28 @@
-import axios, { AxiosInstance } from 'axios';
-import AppDataSource from '../config/database';
-import { Transaction, PaymentStatus } from '../entities/Transaction';
-import { Event } from '../entities/Event';
-import { User } from '../entities/User';
-import { Participant } from '../entities/Participant';
-import crypto from 'crypto';
-import { generateNumericToken } from '../utils/tokenGenerator';
-
-interface XenditInvoiceRequest {
-    external_id: string;
-    amount: number;
-    description: string;
-    invoice_duration?: number;
-    customer: {
-        given_names: string;
-        email: string;
-        mobile_number?: string;
-    };
-    items?: Array<{
-        name: string;
-        quantity: number;
-        price: number;
-    }>;
-    fees?: Array<{
-        type: string;
-        value: number;
-    }>;
-    success_redirect_url?: string;
-    failure_redirect_url?: string;
-}
-
-interface XenditInvoiceResponse {
-    id: string;
-    external_id: string;
-    user_id: string;
-    status: string;
-    merchant_name: string;
-    merchant_profile_picture_url: string;
-    amount: number;
-    payer_email: string;
-    description: string;
-    expiry_date: string;
-    invoice_url: string;
-    available_banks: Array<{
-        bank_code: string;
-        collection_type: string;
-        bank_account_number: string;
-        transfer_amount: number;
-        bank_branch: string;
-        account_holder_name: string;
-    }>;
-    available_ewallets: Array<{
-        ewallet_type: string;
-        amount: number;
-    }>;
-    available_retail_outlets: Array<{
-        retail_outlet_name: string;
-        amount: number;
-        payment_code: string;
-        expires_at: string;
-    }>;
-    should_exclude_credit_card: boolean;
-    should_send_email: boolean;
-    created: string;
-    updated: string;
-    items?: Array<{
-        name: string;
-        quantity: number;
-        price: number;
-    }>;
-    fees?: Array<{
-        type: string;
-        value: number;
-    }>;
-    currency: string;
-    paid_amount: number;
-    paid_at?: string;
-    payment_method?: string;
-    payment_channel?: string;
-    payment_id?: string;
-    settlement_status?: string;
-}
-
-interface XenditWebhookPayload {
-    id: string;
-    external_id: string;
-    user_id: string;
-    status: string;
-    merchant_name: string;
-    amount: number;
-    payer_email: string;
-    description: string;
-    paid_amount: number;
-    paid_at: string;
-    payment_method: string;
-    payment_channel: string;
-    payment_id: string;
-    settlement_status: string;
-    created: string;
-    updated: string;
-}
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const axios_1 = __importDefault(require("axios"));
+const database_1 = __importDefault(require("../config/database"));
+const Transaction_1 = require("../entities/Transaction");
+const Event_1 = require("../entities/Event");
+const User_1 = require("../entities/User");
+const Participant_1 = require("../entities/Participant");
+const crypto_1 = __importDefault(require("crypto"));
+const tokenGenerator_1 = require("../utils/tokenGenerator");
 class XenditService {
-    private apiClient: AxiosInstance;
-    private callbackToken: string;
-    private transactionRepository = AppDataSource.getRepository(Transaction);
-    private eventRepository = AppDataSource.getRepository(Event);
-    private userRepository = AppDataSource.getRepository(User);
-    private participantRepository = AppDataSource.getRepository(Participant);
-
     constructor() {
+        this.transactionRepository = database_1.default.getRepository(Transaction_1.Transaction);
+        this.eventRepository = database_1.default.getRepository(Event_1.Event);
+        this.userRepository = database_1.default.getRepository(User_1.User);
+        this.participantRepository = database_1.default.getRepository(Participant_1.Participant);
         const apiKey = process.env.XENDIT_API_KEY || '';
         this.callbackToken = process.env.XENDIT_CALLBACK_TOKEN || '';
-
         if (!apiKey) {
             console.warn('⚠️ XENDIT_API_KEY not configured');
         }
-
-        // Create Axios instance with Xendit API base URL
-        this.apiClient = axios.create({
+        this.apiClient = axios_1.default.create({
             baseURL: 'https://api.xendit.co',
             auth: {
                 username: apiKey,
@@ -129,80 +33,53 @@ class XenditService {
             }
         });
     }
-
-    /**
-     * Generate order ID
-     */
-    private generateOrderId(): string {
+    generateOrderId() {
         const timestamp = Date.now();
-        const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+        const random = crypto_1.default.randomBytes(4).toString('hex').toUpperCase();
         return `RAMEIN-${timestamp}-${random}`;
     }
-
-    /**
-     * Calculate admin fee
-     */
-    private calculateAdminFee(amount: number): number {
-        if (amount === 0) return 0;
-        // Xendit fee: 1.5% + Rp 1000 minimum
+    calculateAdminFee(amount) {
+        if (amount === 0)
+            return 0;
         return Math.max(1000, Math.round(amount * 0.015));
     }
-
-    /**
-     * Create invoice (payment request)
-     */
-    async createTransaction(userId: string, eventId: string): Promise<any> {
+    async createTransaction(userId, eventId) {
+        var _a, _b, _c, _d, _e;
         try {
-            // Get user and event
             const user = await this.userRepository.findOne({ where: { id: userId } });
             if (!user) {
                 throw new Error('User not found');
             }
-
             const event = await this.eventRepository.findOne({ where: { id: eventId } });
             if (!event) {
                 throw new Error('Event not found');
             }
-
-            // Check if user already registered
             const existingParticipant = await this.participantRepository.findOne({
                 where: { userId, eventId }
             });
-
             if (existingParticipant) {
                 throw new Error('User already registered for this event');
             }
-
-            // Calculate amounts
             const amount = Number(event.price) || 0;
             const adminFee = this.calculateAdminFee(amount);
             const totalAmount = amount + adminFee;
-
-            // Generate order ID
             const orderId = this.generateOrderId();
-
-            // Create transaction record
-            const transaction = new Transaction();
+            const transaction = new Transaction_1.Transaction();
             transaction.userId = userId;
             transaction.eventId = eventId;
             transaction.orderId = orderId;
             transaction.amount = amount;
             transaction.adminFee = adminFee;
             transaction.totalAmount = totalAmount;
-            transaction.paymentStatus = amount === 0 ? PaymentStatus.PAID : PaymentStatus.PENDING;
-
-            // If free event, auto-approve
+            transaction.paymentStatus = amount === 0 ? Transaction_1.PaymentStatus.PAID : Transaction_1.PaymentStatus.PENDING;
             if (amount === 0) {
                 transaction.paidAt = new Date();
                 transaction.notes = 'Free event - auto approved';
                 await this.transactionRepository.save(transaction);
-
-                // Create participant record
-                const participant = new Participant();
+                const participant = new Participant_1.Participant();
                 participant.userId = userId;
                 participant.eventId = eventId;
                 await this.participantRepository.save(participant);
-
                 return {
                     id: transaction.id,
                     transactionId: transaction.id,
@@ -216,16 +93,12 @@ class XenditService {
                     expiredAt: transaction.expiredAt
                 };
             }
-
-            // Save transaction first
             await this.transactionRepository.save(transaction);
-
-            // Create Xendit invoice
-            const invoiceRequest: XenditInvoiceRequest = {
+            const invoiceRequest = {
                 external_id: orderId,
                 amount: totalAmount,
                 description: `Payment for ${event.title}`,
-                invoice_duration: 24 * 3600, // 24 hours in seconds
+                invoice_duration: 24 * 3600,
                 customer: {
                     given_names: user.name,
                     email: user.email,
@@ -246,26 +119,15 @@ class XenditService {
                 success_redirect_url: `${process.env.FRONTEND_URL}/payment/success?order_id=${orderId}`,
                 failure_redirect_url: `${process.env.FRONTEND_URL}/payment/error?order_id=${orderId}`
             };
-
             console.log('📤 Creating Xendit invoice:', JSON.stringify(invoiceRequest, null, 2));
-
-            const response = await this.apiClient.post<XenditInvoiceResponse>(
-                '/v2/invoices',
-                invoiceRequest
-            );
-
+            const response = await this.apiClient.post('/v2/invoices', invoiceRequest);
             const invoiceData = response.data;
-
             console.log('✅ Xendit invoice created:', invoiceData.id);
-
-            // Update transaction with invoice data
-            transaction.snapToken = invoiceData.id; // Store invoice ID as token
+            transaction.snapToken = invoiceData.id;
             transaction.snapUrl = invoiceData.invoice_url;
             transaction.midtransResponse = invoiceData;
             transaction.expiredAt = new Date(invoiceData.expiry_date);
-
             await this.transactionRepository.save(transaction);
-
             return {
                 id: transaction.id,
                 transactionId: transaction.id,
@@ -280,318 +142,224 @@ class XenditService {
                 invoiceId: invoiceData.id,
                 expiredAt: transaction.expiredAt
             };
-        } catch (error: any) {
+        }
+        catch (error) {
             console.error('❌ Xendit API Error:', {
                 message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                statusText: error.response?.statusText,
+                response: (_a = error.response) === null || _a === void 0 ? void 0 : _a.data,
+                status: (_b = error.response) === null || _b === void 0 ? void 0 : _b.status,
+                statusText: (_c = error.response) === null || _c === void 0 ? void 0 : _c.statusText,
                 fullError: error
             });
-
-            // Provide more detailed error message
             let errorMessage = error.message;
-            if (error.response?.data?.error_code) {
+            if ((_e = (_d = error.response) === null || _d === void 0 ? void 0 : _d.data) === null || _e === void 0 ? void 0 : _e.error_code) {
                 errorMessage = `${error.response.data.error_code}: ${error.response.data.message || error.message}`;
             }
-
             throw new Error(`Failed to create payment: ${errorMessage}`);
         }
     }
-
-    /**
-     * Get transaction by order ID
-     */
-    async getTransactionByOrderId(orderId: string): Promise<Transaction | null> {
+    async getTransactionByOrderId(orderId) {
         return await this.transactionRepository.findOne({
             where: { orderId },
             relations: ['user', 'event', 'participant']
         });
     }
-
-    /**
-     * Get transaction by ID
-     */
-    async getTransactionById(id: string): Promise<Transaction | null> {
+    async getTransactionById(id) {
         return await this.transactionRepository.findOne({
             where: { id },
             relations: ['user', 'event', 'participant']
         });
     }
-
-    /**
-     * Check transaction status from Xendit
-     */
-    async checkTransactionStatus(orderId: string): Promise<Transaction | null> {
+    async checkTransactionStatus(orderId) {
         try {
             const transaction = await this.getTransactionByOrderId(orderId);
             if (!transaction) {
                 throw new Error('Transaction not found');
             }
-
-            // Get invoice from Xendit
-            const response = await this.apiClient.get<XenditInvoiceResponse>(
-                `/v2/invoices/${transaction.snapToken}`
-            );
-
+            const response = await this.apiClient.get(`/v2/invoices/${transaction.snapToken}`);
             const invoiceData = response.data;
-
             console.log('📊 Xendit invoice status:', invoiceData.status);
-
-            // Update transaction status based on invoice status
-            if (invoiceData.status === 'PAID' && transaction.paymentStatus !== PaymentStatus.PAID) {
-                transaction.paymentStatus = PaymentStatus.PAID;
+            if (invoiceData.status === 'PAID' && transaction.paymentStatus !== Transaction_1.PaymentStatus.PAID) {
+                transaction.paymentStatus = Transaction_1.PaymentStatus.PAID;
                 transaction.paidAt = new Date(invoiceData.paid_at || new Date());
-                // Convert payment channel to lowercase for enum compatibility
                 const paymentChannel = invoiceData.payment_channel ? invoiceData.payment_channel.toLowerCase() : 'xendit';
-                transaction.paymentMethod = paymentChannel as any;
-
-                // Create participant record
+                transaction.paymentMethod = paymentChannel;
                 const existingParticipant = await this.participantRepository.findOne({
                     where: { userId: transaction.userId, eventId: transaction.eventId }
                 });
-
                 if (!existingParticipant) {
-                    const participant = new Participant();
+                    const participant = new Participant_1.Participant();
                     participant.userId = transaction.userId;
                     participant.eventId = transaction.eventId;
-                    participant.tokenNumber = generateNumericToken(10); // Generate 10-digit token
+                    participant.tokenNumber = (0, tokenGenerator_1.generateNumericToken)(10);
                     await this.participantRepository.save(participant);
                     console.log(`✅ Participant created with token: ${participant.tokenNumber}`);
                 }
-
-                await this.transactionRepository.save(transaction);
-            } else if (invoiceData.status === 'EXPIRED' && transaction.paymentStatus === PaymentStatus.PENDING) {
-                transaction.paymentStatus = PaymentStatus.EXPIRED;
                 await this.transactionRepository.save(transaction);
             }
-
+            else if (invoiceData.status === 'EXPIRED' && transaction.paymentStatus === Transaction_1.PaymentStatus.PENDING) {
+                transaction.paymentStatus = Transaction_1.PaymentStatus.EXPIRED;
+                await this.transactionRepository.save(transaction);
+            }
             return transaction;
-        } catch (error: any) {
+        }
+        catch (error) {
             console.error('❌ Check transaction status error:', error.message);
             throw new Error(`Failed to check transaction status: ${error.message}`);
         }
     }
-
-    /**
-     * Handle Xendit webhook notification
-     */
-    async handleNotification(payload: XenditWebhookPayload): Promise<Transaction> {
+    async handleNotification(payload) {
         try {
             console.log('🔔 Xendit webhook received:', payload.external_id);
-
             const transaction = await this.getTransactionByOrderId(payload.external_id);
             if (!transaction) {
                 throw new Error('Transaction not found');
             }
-
-            // Update transaction based on payment status
             if (payload.status === 'PAID') {
-                transaction.paymentStatus = PaymentStatus.PAID;
+                transaction.paymentStatus = Transaction_1.PaymentStatus.PAID;
                 transaction.paidAt = new Date(payload.paid_at);
-                // Convert payment channel to lowercase for enum compatibility
                 const paymentChannel = payload.payment_channel ? payload.payment_channel.toLowerCase() : 'xendit';
-                transaction.paymentMethod = paymentChannel as any;
-
-                // Create participant record
+                transaction.paymentMethod = paymentChannel;
                 const existingParticipant = await this.participantRepository.findOne({
                     where: { userId: transaction.userId, eventId: transaction.eventId }
                 });
-
                 if (!existingParticipant) {
-                    const participant = new Participant();
+                    const participant = new Participant_1.Participant();
                     participant.userId = transaction.userId;
                     participant.eventId = transaction.eventId;
-                    participant.tokenNumber = generateNumericToken(10); // Generate 10-digit token
+                    participant.tokenNumber = (0, tokenGenerator_1.generateNumericToken)(10);
                     await this.participantRepository.save(participant);
                     console.log(`✅ Participant created with token: ${participant.tokenNumber}`);
                 }
-            } else if (payload.status === 'EXPIRED') {
-                transaction.paymentStatus = PaymentStatus.EXPIRED;
             }
-
+            else if (payload.status === 'EXPIRED') {
+                transaction.paymentStatus = Transaction_1.PaymentStatus.EXPIRED;
+            }
             transaction.midtransResponse = payload;
             await this.transactionRepository.save(transaction);
-
             return transaction;
-        } catch (error: any) {
+        }
+        catch (error) {
             console.error('❌ Handle notification error:', error.message);
             throw new Error(`Failed to process notification: ${error.message}`);
         }
     }
-
-    /**
-     * Cancel transaction
-     */
-    async cancelTransaction(orderId: string): Promise<Transaction> {
+    async cancelTransaction(orderId) {
+        var _a, _b, _c;
         const transaction = await this.getTransactionByOrderId(orderId);
         if (!transaction) {
             throw new Error('Transaction not found');
         }
-
-        // Check if transaction can be cancelled
-        if (transaction.paymentStatus === PaymentStatus.PAID) {
+        if (transaction.paymentStatus === Transaction_1.PaymentStatus.PAID) {
             throw new Error('Tidak dapat membatalkan transaksi yang sudah dibayar');
         }
-
-        if (transaction.paymentStatus === PaymentStatus.CANCELLED) {
+        if (transaction.paymentStatus === Transaction_1.PaymentStatus.CANCELLED) {
             throw new Error('Transaksi sudah dibatalkan sebelumnya');
         }
-
-        if (transaction.paymentStatus === PaymentStatus.EXPIRED) {
+        if (transaction.paymentStatus === Transaction_1.PaymentStatus.EXPIRED) {
             throw new Error('Transaksi sudah kadaluarsa dan tidak dapat dibatalkan');
         }
-
-        if (transaction.paymentStatus === PaymentStatus.FAILED) {
+        if (transaction.paymentStatus === Transaction_1.PaymentStatus.FAILED) {
             throw new Error('Transaksi sudah gagal dan tidak dapat dibatalkan');
         }
-
         try {
-            // Cancel invoice in Xendit if not free
             if (transaction.amount > 0 && transaction.snapToken) {
                 try {
-                    await this.apiClient.post(
-                        `/v2/invoices/${transaction.snapToken}/cancel`
-                    );
+                    await this.apiClient.post(`/v2/invoices/${transaction.snapToken}/cancel`);
                     console.log(`✅ Xendit invoice cancelled: ${orderId}`);
-                } catch (xenditError: any) {
-                    // If invoice already paid or expired, still mark as cancelled locally
-                    if (xenditError.response?.status === 400 || xenditError.response?.status === 404) {
+                }
+                catch (xenditError) {
+                    if (((_a = xenditError.response) === null || _a === void 0 ? void 0 : _a.status) === 400 || ((_b = xenditError.response) === null || _b === void 0 ? void 0 : _b.status) === 404) {
                         console.warn(`⚠️ Xendit error - Invoice cannot be cancelled: ${orderId}`);
-                    } else {
+                    }
+                    else {
                         throw xenditError;
                     }
                 }
             }
-
-            transaction.paymentStatus = PaymentStatus.CANCELLED;
+            transaction.paymentStatus = Transaction_1.PaymentStatus.CANCELLED;
             return await this.transactionRepository.save(transaction);
-        } catch (error: any) {
+        }
+        catch (error) {
             console.error('❌ Cancel transaction error:', {
                 orderId,
                 message: error.message,
-                status: error.response?.status
+                status: (_c = error.response) === null || _c === void 0 ? void 0 : _c.status
             });
             throw new Error(`Gagal membatalkan transaksi: ${error.message}`);
         }
     }
-
-    /**
-     * Get user's transactions
-     */
-    async getUserTransactions(userId: string): Promise<Transaction[]> {
+    async getUserTransactions(userId) {
         return await this.transactionRepository.find({
             where: { userId },
             relations: ['event', 'participant'],
             order: { createdAt: 'DESC' }
         });
     }
-
-    /**
-     * Get event transactions
-     */
-    async getEventTransactions(eventId: string): Promise<Transaction[]> {
+    async getEventTransactions(eventId) {
         return await this.transactionRepository.find({
             where: { eventId },
             relations: ['user', 'participant'],
             order: { createdAt: 'DESC' }
         });
     }
-
-    /**
-     * Get all transactions
-     */
-    async getAllTransactions(filters?: {
-        status?: PaymentStatus;
-        startDate?: Date;
-        endDate?: Date;
-        limit?: number;
-        offset?: number;
-    }): Promise<{ transactions: Transaction[]; total: number }> {
+    async getAllTransactions(filters) {
         let query = this.transactionRepository.createQueryBuilder('transaction')
             .leftJoinAndSelect('transaction.user', 'user')
             .leftJoinAndSelect('transaction.event', 'event');
-
-        if (filters?.status) {
+        if (filters === null || filters === void 0 ? void 0 : filters.status) {
             query = query.where('transaction.paymentStatus = :status', { status: filters.status });
         }
-
-        if (filters?.startDate) {
+        if (filters === null || filters === void 0 ? void 0 : filters.startDate) {
             query = query.andWhere('transaction.createdAt >= :startDate', { startDate: filters.startDate });
         }
-
-        if (filters?.endDate) {
+        if (filters === null || filters === void 0 ? void 0 : filters.endDate) {
             query = query.andWhere('transaction.createdAt <= :endDate', { endDate: filters.endDate });
         }
-
         const total = await query.getCount();
-
-        if (filters?.limit) {
+        if (filters === null || filters === void 0 ? void 0 : filters.limit) {
             query = query.take(filters.limit);
         }
-
-        if (filters?.offset) {
+        if (filters === null || filters === void 0 ? void 0 : filters.offset) {
             query = query.skip(filters.offset);
         }
-
         const transactions = await query.orderBy('transaction.createdAt', 'DESC').getMany();
-
         return { transactions, total };
     }
-
-    /**
-     * Get transaction statistics
-     */
-    async getTransactionStatistics(eventId?: string): Promise<{
-        total: number;
-        paid: number;
-        pending: number;
-        failed: number;
-        totalRevenue: number;
-    }> {
+    async getTransactionStatistics(eventId) {
         let query = this.transactionRepository.createQueryBuilder('transaction');
-
         if (eventId) {
             query = query.where('transaction.eventId = :eventId', { eventId });
         }
-
         const transactions = await query.getMany();
-
         const stats = {
             total: transactions.length,
-            paid: transactions.filter(t => t.paymentStatus === PaymentStatus.PAID).length,
-            pending: transactions.filter(t => t.paymentStatus === PaymentStatus.PENDING).length,
-            failed: transactions.filter(t => t.paymentStatus === PaymentStatus.FAILED).length,
+            paid: transactions.filter(t => t.paymentStatus === Transaction_1.PaymentStatus.PAID).length,
+            pending: transactions.filter(t => t.paymentStatus === Transaction_1.PaymentStatus.PENDING).length,
+            failed: transactions.filter(t => t.paymentStatus === Transaction_1.PaymentStatus.FAILED).length,
             totalRevenue: transactions
-                .filter(t => t.paymentStatus === PaymentStatus.PAID)
-                .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0)
+                .filter(t => t.paymentStatus === Transaction_1.PaymentStatus.PAID)
+                .reduce((sum, t) => sum + t.amount, 0)
         };
-
-        console.log('📊 Transaction Statistics:', stats);
         return stats;
     }
-
-    /**
-     * Verify webhook signature
-     */
-    verifyWebhookSignature(payload: any, signature: string): boolean {
+    verifyWebhookSignature(payload, signature) {
         try {
             if (!this.callbackToken) {
                 console.warn('⚠️ XENDIT_CALLBACK_TOKEN not configured - skipping signature verification');
-                return true; // Allow if token not configured
+                return true;
             }
-
-            const computedSignature = crypto
+            const computedSignature = crypto_1.default
                 .createHmac('sha256', this.callbackToken)
                 .update(JSON.stringify(payload))
                 .digest('hex');
-
             return computedSignature === signature;
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Webhook signature verification error:', error);
             return false;
         }
     }
 }
-
-export default new XenditService();
+exports.default = new XenditService();
+//# sourceMappingURL=xenditService.js.map

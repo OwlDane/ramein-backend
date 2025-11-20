@@ -8,10 +8,15 @@ const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
 const adminOnly = (0, authMiddleware_1.authorize)(['admin']);
 const organizerOrAdmin = (0, authMiddleware_1.authorize)(['organizer', 'admin']);
-router.post('/', [
+router.post('/generate', [
     (0, express_validator_1.body)('participantId').isUUID().withMessage('Valid participant ID is required'),
     (0, express_validator_1.body)('eventId').isUUID().withMessage('Valid event ID is required')
 ], organizerOrAdmin, CertificateController_1.certificateController.generateCertificate);
+router.post('/generate-bulk', [
+    (0, express_validator_1.body)('eventId').isUUID().withMessage('Valid event ID is required'),
+    (0, express_validator_1.body)('participantIds').isArray().withMessage('Participant IDs must be an array'),
+    (0, express_validator_1.body)('participantIds.*').isUUID().withMessage('Each participant ID must be valid')
+], organizerOrAdmin, CertificateController_1.certificateController.generateBulkCertificates);
 router.get('/verify/:certificateNumber', [
     (0, express_validator_1.param)('certificateNumber')
         .isString()

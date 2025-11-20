@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentController = void 0;
-const midtransService_1 = __importDefault(require("../services/midtransService"));
+const xenditService_1 = __importDefault(require("../services/xenditService"));
 const database_1 = __importDefault(require("../config/database"));
 const Event_1 = require("../entities/Event");
 const User_1 = require("../entities/User");
@@ -28,11 +28,12 @@ class PaymentController {
                 });
                 return;
             }
-            const transaction = await midtransService_1.default.createTransaction(userId, eventId);
+            const transaction = await xenditService_1.default.createTransaction(userId, eventId);
             res.status(201).json({
                 success: true,
                 message: 'Transaction created successfully',
                 data: {
+                    id: transaction.id,
                     transactionId: transaction.id,
                     orderId: transaction.orderId,
                     amount: transaction.amount,
@@ -41,6 +42,8 @@ class PaymentController {
                     paymentStatus: transaction.paymentStatus,
                     snapToken: transaction.snapToken,
                     snapUrl: transaction.snapUrl,
+                    invoiceUrl: transaction.snapUrl,
+                    invoiceId: transaction.snapToken,
                     expiredAt: transaction.expiredAt
                 }
             });
@@ -65,7 +68,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transaction = await midtransService_1.default.getTransactionByOrderId(orderId);
+            const transaction = await xenditService_1.default.getTransactionByOrderId(orderId);
             if (!transaction) {
                 res.status(404).json({
                     success: false,
@@ -105,7 +108,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transaction = await midtransService_1.default.getTransactionById(id);
+            const transaction = await xenditService_1.default.getTransactionById(id);
             if (!transaction) {
                 res.status(404).json({
                     success: false,
@@ -145,7 +148,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transaction = await midtransService_1.default.checkTransactionStatus(orderId);
+            const transaction = await xenditService_1.default.checkTransactionStatus(orderId);
             if (!transaction) {
                 res.status(404).json({
                     success: false,
@@ -178,7 +181,7 @@ class PaymentController {
         try {
             const notificationData = req.body;
             console.log('Received Midtrans notification:', notificationData);
-            const transaction = await midtransService_1.default.handleNotification(notificationData);
+            const transaction = await xenditService_1.default.handleNotification(notificationData);
             res.status(200).json({
                 success: true,
                 message: 'Notification processed successfully',
@@ -207,7 +210,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transactions = await midtransService_1.default.getUserTransactions(userId);
+            const transactions = await xenditService_1.default.getUserTransactions(userId);
             res.status(200).json({
                 success: true,
                 data: transactions,
@@ -242,7 +245,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transactions = await midtransService_1.default.getEventTransactions(eventId);
+            const transactions = await xenditService_1.default.getEventTransactions(eventId);
             res.status(200).json({
                 success: true,
                 data: transactions,
@@ -269,7 +272,7 @@ class PaymentController {
                 });
                 return;
             }
-            const existingTransaction = await midtransService_1.default.getTransactionByOrderId(orderId);
+            const existingTransaction = await xenditService_1.default.getTransactionByOrderId(orderId);
             if (!existingTransaction) {
                 res.status(404).json({
                     success: false,
@@ -284,7 +287,7 @@ class PaymentController {
                 });
                 return;
             }
-            const transaction = await midtransService_1.default.cancelTransaction(orderId);
+            const transaction = await xenditService_1.default.cancelTransaction(orderId);
             res.status(200).json({
                 success: true,
                 message: 'Transaction cancelled successfully',
@@ -328,7 +331,7 @@ class PaymentController {
             if (offset) {
                 filters.offset = parseInt(offset);
             }
-            const result = await midtransService_1.default.getAllTransactions(filters);
+            const result = await xenditService_1.default.getAllTransactions(filters);
             res.status(200).json({
                 success: true,
                 data: result.transactions,
@@ -358,7 +361,7 @@ class PaymentController {
                 return;
             }
             const { eventId } = req.query;
-            const statistics = await midtransService_1.default.getTransactionStatistics(eventId);
+            const statistics = await xenditService_1.default.getTransactionStatistics(eventId);
             res.status(200).json({
                 success: true,
                 data: statistics

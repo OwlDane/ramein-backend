@@ -2,10 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const AdminController_1 = require("../controllers/AdminController");
+const FinancialController_1 = require("../controllers/FinancialController");
 const adminAuth_1 = require("../middlewares/adminAuth");
 const router = (0, express_1.Router)();
 router.use(adminAuth_1.adminAuth);
 router.get('/dashboard/stats', AdminController_1.AdminController.getDashboardStats);
+router.get('/dashboard/financial', FinancialController_1.FinancialController.getFinancialAnalytics);
 router.get('/dashboard/export', AdminController_1.AdminController.exportDashboardData);
 router.post('/events', AdminController_1.AdminController.createEvent);
 router.get('/events', AdminController_1.AdminController.getEvents);
