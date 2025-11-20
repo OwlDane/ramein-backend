@@ -6,7 +6,7 @@ import { AppError } from './errorService';
 const useResend = process.env.USE_RESEND === 'true';
 const resend = useResend ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// Fallback nodemailer for development
+// Gmail SMTP transporter
 let transporter: any = null;
 if (!useResend) {
   // Check if credentials are available
@@ -24,16 +24,23 @@ if (!useResend) {
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      pool: true, // Use connection pooling for better performance
+      maxConnections: 5,
+      maxMessages: 100,
+      rateDelta: 1000, // 1 second
+      rateLimit: 5 // Max 5 emails per second
     });
 
     // Verify transporter on startup
     (async () => {
       try {
         await transporter.verify();
-        console.log('[mail] ✅ Nodemailer ready (development mode)');
+        const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+        console.log(`[mail] ✅ Gmail SMTP ready (${mode} mode)`);
+        console.log(`[mail] 📧 Sending from: ${process.env.EMAIL_USER}`);
       } catch (err) {
-        console.error('[mail] ❌ Nodemailer verify failed:', err);
+        console.error('[mail] ❌ Gmail SMTP verify failed:', err);
         console.error('[mail] 💡 Make sure you are using Gmail App Password, not regular password');
         console.error('[mail] 📖 How to get App Password: https://support.google.com/accounts/answer/185833');
       }

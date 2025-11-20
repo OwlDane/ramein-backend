@@ -26,15 +26,22 @@ if (!useResend) {
             },
             tls: {
                 rejectUnauthorized: false
-            }
+            },
+            pool: true,
+            maxConnections: 5,
+            maxMessages: 100,
+            rateDelta: 1000,
+            rateLimit: 5
         });
         (async () => {
             try {
                 await transporter.verify();
-                console.log('[mail] ✅ Nodemailer ready (development mode)');
+                const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+                console.log(`[mail] ✅ Gmail SMTP ready (${mode} mode)`);
+                console.log(`[mail] 📧 Sending from: ${process.env.EMAIL_USER}`);
             }
             catch (err) {
-                console.error('[mail] ❌ Nodemailer verify failed:', err);
+                console.error('[mail] ❌ Gmail SMTP verify failed:', err);
                 console.error('[mail] 💡 Make sure you are using Gmail App Password, not regular password');
                 console.error('[mail] 📖 How to get App Password: https://support.google.com/accounts/answer/185833');
             }
