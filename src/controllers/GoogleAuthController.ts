@@ -21,16 +21,23 @@ export const googleAuthCallback = async (req: Request, res: Response) => {
       throw new AppError('ID Token or Access Token is required', 400);
     }
 
-    // Verify Google token by calling Google's tokeninfo endpoint
-    // Try ID token first, then access token
-    let response = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${token}`);
+    // Verify Google token by calling Google's userinfo endpoint
+    console.log('🔵 Verifying token with Google API...');
+    let response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
 
     if (!response.ok) {
-      // If ID token verification fails, try with access token
-      response = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`);
+      console.log('⚠️ Access token verification failed, trying ID token endpoint...');
+      // If access token fails, try as ID token
+      response = await fetch('https://oauth2.googleapis.com/tokeninfo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `id_token=${token}`
+      });
     }
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Token verification failed:', response.status, response.statusText, errorText);
       throw new AppError('Invalid Google token', 400);
     }
 
