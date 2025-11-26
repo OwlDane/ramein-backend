@@ -6,8 +6,22 @@ const CertificateController_1 = require("../controllers/CertificateController");
 const authMiddleware_1 = require("../middlewares/authMiddleware");
 const router = (0, express_1.Router)();
 router.use(authMiddleware_1.authMiddleware);
-const adminOnly = (0, authMiddleware_1.authorize)(['admin']);
-const organizerOrAdmin = (0, authMiddleware_1.authorize)(['organizer', 'admin']);
+router.get('/debug-auth', (req, res) => {
+    res.json({
+        authenticated: !!req.user,
+        user: req.user ? {
+            id: req.user.id,
+            email: req.user.email,
+            role: req.user.role,
+            roleType: typeof req.user.role
+        } : null,
+        timestamp: new Date().toISOString()
+    });
+});
+console.log('[CertificateRoutes] ✅ Initializing with UPPERCASE roles: ADMIN, ORGANIZER');
+const adminOnly = (0, authMiddleware_1.authorize)(['ADMIN']);
+const organizerOrAdmin = (0, authMiddleware_1.authorize)(['ORGANIZER', 'ADMIN']);
+console.log('[CertificateRoutes] ✅ Middleware configured with uppercase roles');
 router.post('/generate', [
     (0, express_validator_1.body)('participantId').isUUID().withMessage('Valid participant ID is required'),
     (0, express_validator_1.body)('eventId').isUUID().withMessage('Valid event ID is required')

@@ -10,8 +10,14 @@ const User_1 = require("../entities/User");
 const sessionTimeout_1 = require("./sessionTimeout");
 const authMiddleware = async (req, res, next) => {
     try {
+        console.log('[Auth] 🔐 authMiddleware called:', {
+            method: req.method,
+            path: req.path,
+            hasAuthHeader: !!req.headers.authorization
+        });
         const authHeader = req.headers.authorization;
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            console.log('[Auth] ❌ No token or invalid format');
             res.status(401).json({
                 success: false,
                 error: "No token provided or invalid format",
@@ -32,10 +38,19 @@ const authMiddleware = async (req, res, next) => {
             });
             return;
         }
+        const finalRole = decoded.role || user.role;
+        console.log('[Auth] User authenticated:', {
+            userId: user.id,
+            email: user.email,
+            dbRole: user.role,
+            jwtRole: decoded.role,
+            finalRole,
+            issuer: decoded.iss
+        });
         req.user = {
             ...user,
             userId: user.id,
-            role: user.role,
+            role: finalRole,
         };
         req.token = token;
         if (!(0, sessionTimeout_1.getSession)(token)) {
@@ -68,20 +83,54 @@ const authMiddleware = async (req, res, next) => {
 exports.authMiddleware = authMiddleware;
 const authorize = (allowedRoles = []) => {
     return (req, res, next) => {
+        console.log('[Auth] 🛡️ authorize middleware called:', {
+            method: req.method,
+            path: req.path,
+            allowedRoles,
+            hasUser: !!req.user
+        });
         if (!req.user) {
+            console.log('[Auth] ❌ No user in request');
             res.status(401).json({
                 success: false,
                 error: "Authentication required",
             });
             return;
         }
-        if (allowedRoles.length > 0 && !allowedRoles.includes(req.user.role)) {
+        const userRoleUpper = req.user.role.toUpperCase();
+        const allowedRolesUpper = allowedRoles.map(r => r.toUpperCase());
+        const hasPermission = allowedRolesUpper.includes(userRoleUpper);
+        console.log('[Auth] Role check:', {
+            userRole: req.user.role,
+            userRoleUpper,
+            allowedRoles,
+            allowedRolesUpper,
+            hasPermission,
+            userEmail: req.user.email,
+            userId: req.user.id,
+            path: req.path,
+            method: req.method
+        });
+        if (allowedRoles.length > 0 && !hasPermission) {
+            console.error('[Auth] ❌ Role authorization FAILED:', {
+                userRole: req.user.role,
+                userRoleUpper,
+                allowedRoles,
+                allowedRolesUpper,
+                userEmail: req.user.email,
+                path: req.path
+            });
             res.status(403).json({
                 success: false,
                 error: "Insufficient permissions",
+                debug: {
+                    yourRole: req.user.role,
+                    requiredRoles: allowedRoles
+                }
             });
             return;
         }
+        console.log('[Auth] ✅ Role authorization SUCCESS');
         next();
     };
 };

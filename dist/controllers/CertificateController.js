@@ -13,15 +13,20 @@ class CertificateController {
             }
             const { participantId, eventId } = req.body;
             const issuedBy = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.id) || 'system';
+            console.log('[Certificate] Generating certificate:', { participantId, eventId, issuedBy });
             const result = await certificateService_1.certificateService.generateCertificate(participantId, eventId, issuedBy);
+            console.log('[Certificate] Generated successfully:', result);
             return res.status(201).json({
                 success: true,
+                message: `Berhasil membuat sertifikat untuk ${result.participantName}`,
                 data: result
             });
         }
         catch (error) {
+            console.error('[Certificate] Generation error:', error);
             return res.status(500).json({
                 success: false,
+                message: error.message || 'Gagal membuat sertifikat',
                 error: error.message || 'Failed to generate certificate'
             });
         }

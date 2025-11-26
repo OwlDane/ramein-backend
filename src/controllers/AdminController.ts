@@ -600,16 +600,20 @@ export class AdminController {
                 return;
             }
 
-            // Validate H-3 rule for date changes
+            // Validate H+3 rule: Event date must be at least 3 days from today
             if (date) {
                 const eventDate = new Date(date);
+                eventDate.setHours(0, 0, 0, 0); // Reset time to start of day
+                
                 const today = new Date();
+                today.setHours(0, 0, 0, 0); // Reset time to start of day
+                
                 const threeDaysFromNow = new Date(today);
                 threeDaysFromNow.setDate(today.getDate() + 3);
 
                 if (eventDate < threeDaysFromNow) {
                     res.status(400).json({ 
-                        message: 'Tanggal kegiatan hanya bisa diubah maksimal H-3 dari tanggal pelaksanaan' 
+                        message: 'Tanggal kegiatan minimal H+3 dari hari ini (minimal 3 hari ke depan)' 
                     });
                     return;
                 }
@@ -677,10 +681,10 @@ export class AdminController {
             if (isFeatured !== undefined) event.isFeatured = isFeatured === 'true' || isFeatured === true;
             if (tags !== undefined) event.tags = tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null;
 
-            // Update category if provided
-            if (categoryId) {
+            // Update category if provided and not "undefined"
+            if (categoryId && categoryId !== 'undefined' && categoryId !== '') {
                 const category = await categoryRepository.findOne({
-                    where: { id: categoryId }
+                    where: { id: parseInt(categoryId) }
                 });
 
                 if (!category) {

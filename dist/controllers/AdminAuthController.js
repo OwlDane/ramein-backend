@@ -48,14 +48,21 @@ class AdminAuthController {
                 });
                 return;
             }
-            const adminToken = jsonwebtoken_1.default.sign({
+            const tokenPayload = {
                 userId: admin.id,
                 id: admin.id,
                 email: admin.email,
                 role: admin.role,
                 isAdmin: true,
                 loginTime: new Date().toISOString()
-            }, process.env.JWT_SECRET || 'fallback-secret', {
+            };
+            logger_1.default.info(`[AdminAuth] Generating token for admin:`, {
+                email: admin.email,
+                role: admin.role,
+                roleType: typeof admin.role,
+                userId: admin.id
+            });
+            const adminToken = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || 'fallback-secret', {
                 expiresIn: '12h',
                 issuer: 'ramein-admin'
             });

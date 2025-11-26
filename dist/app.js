@@ -91,6 +91,7 @@ app.use((req, res, next) => {
 });
 app.use(sessionTimeout_1.default);
 app.use("/api/files", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
+app.use("/uploads", express_1.default.static(path_1.default.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/categories", eventCategoryRoutes_1.default);
 app.use("/api/events", events_1.default);
