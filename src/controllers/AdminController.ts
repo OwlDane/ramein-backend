@@ -4,6 +4,7 @@ import { Event } from '../entities/Event';
 import { Participant } from '../entities/Participant';
 import { User } from '../entities/User';
 import { KategoriKegiatan } from '../entities/KategoriKegiatan';
+import { Notification, NotificationType } from '../entities/Notification';
 import ExportService from '../services/exportService';
 import logger from '../utils/logger';
 
@@ -11,6 +12,7 @@ const eventRepository = AppDataSource.getRepository(Event);
 const participantRepository = AppDataSource.getRepository(Participant);
 const userRepository = AppDataSource.getRepository(User);
 const categoryRepository = AppDataSource.getRepository(KategoriKegiatan);
+const notificationRepository = AppDataSource.getRepository(Notification);
 
 export class AdminController {
     // Get comprehensive dashboard statistics
@@ -600,24 +602,30 @@ export class AdminController {
                 return;
             }
 
-            // Validate H+3 rule: Event date must be at least 3 days from today
-            if (date) {
-                const eventDate = new Date(date);
-                eventDate.setHours(0, 0, 0, 0); // Reset time to start of day
-                
+        // Validate H+3 rule: ONLY if date is being changed
+        if (date) {
+            const newEventDate = new Date(date);
+            newEventDate.setHours(0, 0, 0, 0);
+            
+            const existingEventDate = new Date(event.date);
+            existingEventDate.setHours(0, 0, 0, 0);
+            
+            // Only validate H+3 if the date is actually being changed
+            if (newEventDate.getTime() !== existingEventDate.getTime()) {
                 const today = new Date();
-                today.setHours(0, 0, 0, 0); // Reset time to start of day
+                today.setHours(0, 0, 0, 0);
                 
                 const threeDaysFromNow = new Date(today);
                 threeDaysFromNow.setDate(today.getDate() + 3);
 
-                if (eventDate < threeDaysFromNow) {
+                if (newEventDate < threeDaysFromNow) {
                     res.status(400).json({ 
                         message: 'Tanggal kegiatan minimal H+3 dari hari ini (minimal 3 hari ke depan)' 
                     });
                     return;
                 }
             }
+        }
 
             // Handle file uploads or use URLs
             let flyerPath = event.flyer;
@@ -698,7 +706,44 @@ export class AdminController {
             }
 
             const updatedEvent = await eventRepository.save(event);
+            try {
+                const participants = await participantRepository.find({
+                    where: { eventId: id },
+                    relations: ['user']
+                });
 
+                if (participants.length > 0) {
+                    const changes: string[] = [];
+                    if (title) changes.push('Judul');
+                    if (description) changes.push('Deskripsi');
+                    if (date) changes.push('Tanggal');
+                    if (time) changes.push('Waktu');
+                    if (location) changes.push('Lokasi');
+                    if (meetingLink) changes.push('Link Meeting');
+
+                    const changeText = changes.length > 0 ? changes.join(', ') : 'Informasi event';
+
+                    const notifications = participants.map(participant => {
+                        const notification = new Notification();
+                        notification.userId = participant.userId;
+                        notification.eventId = id;
+                        notification.type = NotificationType.EVENT_UPDATE;
+                        notification.title = `Update: ${updatedEvent.title}`;
+                        notification.message = `Ada perubahan pada event "${updatedEvent.title}". Yang diubah: ${changeText}. Silakan cek detail event untuk informasi terbaru.`;
+                        notification.metadata = {
+                            changes,
+                            updatedBy: req.adminUser?.email,
+                            updatedAt: new Date()
+                        };
+                        return notification;
+                    });
+
+                    await notificationRepository.save(notifications);
+                    logger.info(`Sent update notifications to ${participants.length} participants for event: ${updatedEvent.title}`);
+                }
+            } catch (notifError) {
+                logger.error('Error sending event update notifications:', notifError);
+            }
             logger.info(`Admin ${req.adminUser?.email} updated event: ${updatedEvent.title}`);
 
             res.json({

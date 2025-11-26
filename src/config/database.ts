@@ -10,6 +10,7 @@ import { Article } from "../entities/Article";
 import { ArticleCategory } from "../entities/ArticleCategory";
 import { Testimonial } from "../entities/Testimonial";
 import { Gallery } from "../entities/Gallery";
+import { Notification } from "../entities/Notification";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -37,6 +38,7 @@ const databaseConfig: DataSourceOptions = {
     ArticleCategory,
     Testimonial,
     Gallery,
+    Notification,
   ],
   synchronize: false, // Disable synchronize to prevent conflicts with existing data
   logging: ["error", "warn"],

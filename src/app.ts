@@ -22,6 +22,7 @@ import articleRoutes from "./routes/articleRoutes";
 import testimonialRoutes from "./routes/testimonialRoutes";
 import contactRoutes from "./routes/contactRoutes";
 import galleryRoutes from "./routes/galleryRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
 
 // Import middleware
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -147,6 +148,7 @@ app.use("/api/articles", articleRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Error handling middleware
 
