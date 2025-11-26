@@ -9,12 +9,14 @@ const Event_1 = require("../entities/Event");
 const Participant_1 = require("../entities/Participant");
 const User_1 = require("../entities/User");
 const KategoriKegiatan_1 = require("../entities/KategoriKegiatan");
+const Notification_1 = require("../entities/Notification");
 const exportService_1 = __importDefault(require("../services/exportService"));
 const logger_1 = __importDefault(require("../utils/logger"));
 const eventRepository = database_1.default.getRepository(Event_1.Event);
 const participantRepository = database_1.default.getRepository(Participant_1.Participant);
 const userRepository = database_1.default.getRepository(User_1.User);
 const categoryRepository = database_1.default.getRepository(KategoriKegiatan_1.KategoriKegiatan);
+const notificationRepository = database_1.default.getRepository(Notification_1.Notification);
 class AdminController {
     static async getDashboardStats(_req, res) {
         try {
@@ -467,15 +469,21 @@ class AdminController {
                 return;
             }
             if (date) {
-                const eventDate = new Date(date);
-                const today = new Date();
-                const threeDaysFromNow = new Date(today);
-                threeDaysFromNow.setDate(today.getDate() + 3);
-                if (eventDate < threeDaysFromNow) {
-                    res.status(400).json({
-                        message: 'Tanggal kegiatan hanya bisa diubah maksimal H-3 dari tanggal pelaksanaan'
-                    });
-                    return;
+                const newEventDate = new Date(date);
+                newEventDate.setHours(0, 0, 0, 0);
+                const existingEventDate = new Date(event.date);
+                existingEventDate.setHours(0, 0, 0, 0);
+                if (newEventDate.getTime() !== existingEventDate.getTime()) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const threeDaysFromNow = new Date(today);
+                    threeDaysFromNow.setDate(today.getDate() + 3);
+                    if (newEventDate < threeDaysFromNow) {
+                        res.status(400).json({
+                            message: 'Tanggal kegiatan minimal H+3 dari hari ini (minimal 3 hari ke depan)'
+                        });
+                        return;
+                    }
                 }
             }
             let flyerPath = event.flyer;
@@ -549,9 +557,9 @@ class AdminController {
                 event.isFeatured = isFeatured === 'true' || isFeatured === true;
             if (tags !== undefined)
                 event.tags = tags ? (typeof tags === 'string' ? tags : tags.join(',')) : null;
-            if (categoryId) {
+            if (categoryId && categoryId !== 'undefined' && categoryId !== '') {
                 const category = await categoryRepository.findOne({
-                    where: { id: categoryId }
+                    where: { id: parseInt(categoryId) }
                 });
                 if (!category) {
                     res.status(400).json({
@@ -562,6 +570,48 @@ class AdminController {
                 event.category = category.nama_kategori;
             }
             const updatedEvent = await eventRepository.save(event);
+            try {
+                const participants = await participantRepository.find({
+                    where: { eventId: id },
+                    relations: ['user']
+                });
+                if (participants.length > 0) {
+                    const changes = [];
+                    if (title)
+                        changes.push('Judul');
+                    if (description)
+                        changes.push('Deskripsi');
+                    if (date)
+                        changes.push('Tanggal');
+                    if (time)
+                        changes.push('Waktu');
+                    if (location)
+                        changes.push('Lokasi');
+                    if (meetingLink)
+                        changes.push('Link Meeting');
+                    const changeText = changes.length > 0 ? changes.join(', ') : 'Informasi event';
+                    const notifications = participants.map(participant => {
+                        var _a;
+                        const notification = new Notification_1.Notification();
+                        notification.userId = participant.userId;
+                        notification.eventId = id;
+                        notification.type = Notification_1.NotificationType.EVENT_UPDATE;
+                        notification.title = `Update: ${updatedEvent.title}`;
+                        notification.message = `Ada perubahan pada event "${updatedEvent.title}". Yang diubah: ${changeText}. Silakan cek detail event untuk informasi terbaru.`;
+                        notification.metadata = {
+                            changes,
+                            updatedBy: (_a = req.adminUser) === null || _a === void 0 ? void 0 : _a.email,
+                            updatedAt: new Date()
+                        };
+                        return notification;
+                    });
+                    await notificationRepository.save(notifications);
+                    logger_1.default.info(`Sent update notifications to ${participants.length} participants for event: ${updatedEvent.title}`);
+                }
+            }
+            catch (notifError) {
+                logger_1.default.error('Error sending event update notifications:', notifError);
+            }
             logger_1.default.info(`Admin ${(_a = req.adminUser) === null || _a === void 0 ? void 0 : _a.email} updated event: ${updatedEvent.title}`);
             res.json({
                 message: 'Kegiatan berhasil diupdate',

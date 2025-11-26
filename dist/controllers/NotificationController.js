@@ -1,44 +1,35 @@
-import { Response } from 'express';
-import AppDataSource from '../config/database';
-import { Notification } from '../entities/Notification';
-import { AuthRequest } from '../middlewares/auth';
-import logger from '../utils/logger';
-
-const notificationRepository = AppDataSource.getRepository(Notification);
-
-export class NotificationController {
-    // Get user notifications
-    static async getUserNotifications(req: AuthRequest, res: Response) {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NotificationController = void 0;
+const database_1 = __importDefault(require("../config/database"));
+const Notification_1 = require("../entities/Notification");
+const logger_1 = __importDefault(require("../utils/logger"));
+const notificationRepository = database_1.default.getRepository(Notification_1.Notification);
+class NotificationController {
+    static async getUserNotifications(req, res) {
         try {
             const userId = req.user.id;
             const { page = 1, limit = 20, unreadOnly = 'false' } = req.query;
             const skip = (Number(page) - 1) * Number(limit);
-
             let query = notificationRepository.createQueryBuilder('notification')
                 .leftJoinAndSelect('notification.event', 'event')
                 .where('notification.userId = :userId', { userId });
-
-            // Filter unread only if requested
             if (unreadOnly === 'true') {
                 query = query.andWhere('notification.isRead = :isRead', { isRead: false });
             }
-
-            // Get total count
             const total = await query.getCount();
-
-            // Get unread count
             const unreadCount = await notificationRepository.count({
                 where: { userId, isRead: false }
             });
-
-            // Get paginated results
             const notifications = await query
                 .skip(skip)
                 .take(Number(limit))
                 .orderBy('notification.createdAt', 'DESC')
                 .getMany();
-
-            return res.json({
+            res.json({
                 notifications,
                 unreadCount,
                 pagination: {
@@ -48,82 +39,68 @@ export class NotificationController {
                     totalPages: Math.ceil(total / Number(limit))
                 }
             });
-
-        } catch (error) {
-            logger.error('Get user notifications error:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat mengambil notifikasi' });
+        }
+        catch (error) {
+            logger_1.default.error('Get user notifications error:', error);
+            res.status(500).json({ message: 'Terjadi kesalahan saat mengambil notifikasi' });
         }
     }
-
-    // Mark notification as read
-    static async markAsRead(req: AuthRequest, res: Response) {
+    static async markAsRead(req, res) {
         try {
             const { id } = req.params;
             const userId = req.user.id;
-
             const notification = await notificationRepository.findOne({
                 where: { id, userId }
             });
-
             if (!notification) {
                 return res.status(404).json({ message: 'Notifikasi tidak ditemukan' });
             }
-
             if (!notification.isRead) {
                 notification.isRead = true;
                 notification.readAt = new Date();
                 await notificationRepository.save(notification);
             }
-
-            return res.json({ message: 'Notifikasi ditandai sudah dibaca', notification });
-
-        } catch (error) {
-            logger.error('Mark notification as read error:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat menandai notifikasi' });
+            res.json({ message: 'Notifikasi ditandai sudah dibaca', notification });
+        }
+        catch (error) {
+            logger_1.default.error('Mark notification as read error:', error);
+            res.status(500).json({ message: 'Terjadi kesalahan saat menandai notifikasi' });
         }
     }
-
-    // Mark all notifications as read
-    static async markAllAsRead(req: AuthRequest, res: Response) {
+    static async markAllAsRead(req, res) {
         try {
             const userId = req.user.id;
-
             await notificationRepository
                 .createQueryBuilder()
-                .update(Notification)
+                .update(Notification_1.Notification)
                 .set({ isRead: true, readAt: new Date() })
                 .where('userId = :userId AND isRead = :isRead', { userId, isRead: false })
                 .execute();
-
-            return res.json({ message: 'Semua notifikasi ditandai sudah dibaca' });
-
-        } catch (error) {
-            logger.error('Mark all notifications as read error:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat menandai semua notifikasi' });
+            res.json({ message: 'Semua notifikasi ditandai sudah dibaca' });
+        }
+        catch (error) {
+            logger_1.default.error('Mark all notifications as read error:', error);
+            res.status(500).json({ message: 'Terjadi kesalahan saat menandai semua notifikasi' });
         }
     }
-
-    // Delete notification
-    static async deleteNotification(req: AuthRequest, res: Response) {
+    static async deleteNotification(req, res) {
         try {
             const { id } = req.params;
             const userId = req.user.id;
-
             const notification = await notificationRepository.findOne({
                 where: { id, userId }
             });
-
             if (!notification) {
                 return res.status(404).json({ message: 'Notifikasi tidak ditemukan' });
             }
-
             await notificationRepository.remove(notification);
-
-            return res.json({ message: 'Notifikasi berhasil dihapus' });
-
-        } catch (error) {
-            logger.error('Delete notification error:', error);
-            return res.status(500).json({ message: 'Terjadi kesalahan saat menghapus notifikasi' });
+            res.json({ message: 'Notifikasi berhasil dihapus' });
+        }
+        catch (error) {
+            logger_1.default.error('Delete notification error:', error);
+            res.status(500).json({ message: 'Terjadi kesalahan saat menghapus notifikasi' });
         }
     }
 }
+exports.NotificationController = NotificationController;
+//# sourceMappingURL=NotificationController.js.map

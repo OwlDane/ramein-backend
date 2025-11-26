@@ -45,6 +45,7 @@ const Article_1 = require("../entities/Article");
 const ArticleCategory_1 = require("../entities/ArticleCategory");
 const Testimonial_1 = require("../entities/Testimonial");
 const Gallery_1 = require("../entities/Gallery");
+const Notification_1 = require("../entities/Notification");
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const databaseConfig = {
@@ -69,6 +70,7 @@ const databaseConfig = {
         ArticleCategory_1.ArticleCategory,
         Testimonial_1.Testimonial,
         Gallery_1.Gallery,
+        Notification_1.Notification,
     ],
     synchronize: false,
     logging: ["error", "warn"],
