@@ -70,10 +70,17 @@ export class EventController {
                 query = query.andWhere('LOWER(event.category) = LOWER(:category)', { category });
             }
 
+            // Only show published events
+            query = query.andWhere('event.isPublished = :isPublished', { isPublished: true });
+
             // Sort
             switch (sort) {
                 case 'nearest':
-                    query = query.orderBy('event.date', 'ASC');
+                    // Show upcoming events first, then past events
+                    query = query.orderBy(
+                        `CASE WHEN event.date >= :today THEN 0 ELSE 1 END`,
+                        'ASC'
+                    ).addOrderBy('event.date', 'ASC');
                     break;
                 case 'furthest':
                     query = query.orderBy('event.date', 'DESC');
@@ -85,13 +92,15 @@ export class EventController {
                     query = query.orderBy('event.price', 'DESC');
                     break;
                 default:
-                    query = query.orderBy('event.date', 'ASC');
+                    // Default: upcoming first, then past
+                    query = query.orderBy(
+                        `CASE WHEN event.date >= :today THEN 0 ELSE 1 END`,
+                        'ASC'
+                    ).addOrderBy('event.date', 'ASC');
             }
 
-            // Only show published events and future events
-            query = query
-                .andWhere('event.isPublished = :isPublished', { isPublished: true })
-                .andWhere('event.date >= :today', { today: new Date() });
+            // Set today parameter for sorting
+            query = query.setParameter('today', new Date());
 
             const events = await query.getMany();
 
